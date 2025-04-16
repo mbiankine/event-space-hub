@@ -21,8 +21,8 @@ interface AuthContextType {
   profile: UserProfile | null;
   roles: UserRole[];
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
+  signIn: (email: string, password: string, role?: UserRole) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string, role?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
 }
@@ -102,12 +102,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, role?: UserRole) => {
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      navigate('/');
+      
+      // Redirecionar com base no papel do usuário
+      if (role === 'host') {
+        navigate('/host/dashboard');
+      } else {
+        navigate('/');
+      }
+      
       toast.success('Login realizado com sucesso!');
     } catch (error: any) {
       toast.error(error.message || 'Erro ao fazer login');
@@ -117,20 +124,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string, role?: UserRole) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
+            role: role || 'client', // Define o papel escolhido
           },
         },
       });
       
       if (error) throw error;
+
+      // Se o cadastro foi bem-sucedido e temos um usuário, adicione o papel manualmente
+      if (data.user) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([
+            { user_id: data.user.id, role: role || 'client' }
+          ]);
+          
+        if (roleError) console.error('Error adding role:', roleError);
+      }
       
       toast.success('Conta criada com sucesso! Verifique seu email para confirmação.');
       navigate('/auth/login');

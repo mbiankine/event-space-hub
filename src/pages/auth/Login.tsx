@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -25,6 +26,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const { signIn, isLoading } = useAuth();
+  const [userType, setUserType] = React.useState<'client' | 'host'>('client');
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -35,7 +37,7 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    await signIn(data.email, data.password);
+    await signIn(data.email, data.password, userType);
   };
 
   return (
@@ -52,8 +54,30 @@ const Login = () => {
             </Link>
           </p>
         </div>
+        
+        <Tabs 
+          defaultValue="client" 
+          onValueChange={(value) => setUserType(value as 'client' | 'host')}
+          className="w-full"
+        >
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="client">Cliente</TabsTrigger>
+            <TabsTrigger value="host">Anfitrião</TabsTrigger>
+          </TabsList>
+          <TabsContent value="client" className="mt-4">
+            <p className="text-sm text-gray-500 mb-4">
+              Encontre e reserve os melhores espaços para seus eventos
+            </p>
+          </TabsContent>
+          <TabsContent value="host" className="mt-4">
+            <p className="text-sm text-gray-500 mb-4">
+              Anuncie e gerencie seus espaços para eventos
+            </p>
+          </TabsContent>
+        </Tabs>
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-6">
             <div className="space-y-4">
               <FormField
                 control={form.control}
@@ -89,7 +113,7 @@ const Login = () => {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Entrando...' : 'Entrar'}
+                {isLoading ? 'Entrando...' : `Entrar como ${userType === 'client' ? 'Cliente' : 'Anfitrião'}`}
               </Button>
             </div>
           </form>

@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Search, Globe, Menu, User } from "lucide-react";
+import { Globe, Menu, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
@@ -22,16 +22,6 @@ export function Header() {
         <Link to="/" className="flex items-center">
           <span className="text-2xl font-bold text-eventspace-500">EventSpace</span>
         </Link>
-
-        {/* Search Bar */}
-        <div className="hidden md:flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-sm hover:shadow transition-shadow cursor-pointer">
-          <span className="text-sm font-medium">Localização</span>
-          <span className="text-sm text-muted-foreground px-2 border-x">Data</span>
-          <span className="text-sm text-muted-foreground">Convidados</span>
-          <Button size="icon" variant="ghost" className="rounded-full bg-primary ml-1">
-            <Search className="h-4 w-4 text-white" />
-          </Button>
-        </div>
 
         {/* User Menu */}
         <div className="flex items-center gap-4">

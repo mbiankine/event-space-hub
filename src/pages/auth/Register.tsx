@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const registerSchema = z.object({
   fullName: z.string().min(3, 'Nome completo deve ter pelo menos 3 caracteres'),
@@ -30,6 +31,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
   const { signUp, isLoading } = useAuth();
+  const [userType, setUserType] = React.useState<'client' | 'host'>('client');
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -42,7 +44,7 @@ const Register = () => {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
-    await signUp(data.email, data.password, data.fullName);
+    await signUp(data.email, data.password, data.fullName, userType);
   };
 
   return (
@@ -59,8 +61,30 @@ const Register = () => {
             </Link>
           </p>
         </div>
+        
+        <Tabs 
+          defaultValue="client" 
+          onValueChange={(value) => setUserType(value as 'client' | 'host')}
+          className="w-full"
+        >
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="client">Cliente</TabsTrigger>
+            <TabsTrigger value="host">Anfitrião</TabsTrigger>
+          </TabsList>
+          <TabsContent value="client" className="mt-4">
+            <p className="text-sm text-gray-500 mb-4">
+              Crie uma conta para encontrar e reservar espaços para seus eventos
+            </p>
+          </TabsContent>
+          <TabsContent value="host" className="mt-4">
+            <p className="text-sm text-gray-500 mb-4">
+              Crie uma conta para anunciar e gerenciar seus espaços para eventos
+            </p>
+          </TabsContent>
+        </Tabs>
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-6">
             <div className="space-y-4">
               <FormField
                 control={form.control}
@@ -122,7 +146,7 @@ const Register = () => {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Registrando...' : 'Registrar'}
+                {isLoading ? 'Registrando...' : `Registrar como ${userType === 'client' ? 'Cliente' : 'Anfitrião'}`}
               </Button>
             </div>
           </form>

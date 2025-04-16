@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CategoryFilters } from "@/components/CategoryFilters";
 import { SpaceCard } from "@/components/SpaceCard";
+import { SearchBar } from "@/components/SearchBar";
 
 // Sample data - in a real app, this would come from an API
 const featuredSpaces = [
@@ -84,6 +85,14 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+      
+      {/* Barra de pesquisa */}
+      <div className="bg-white shadow-sm py-4 sticky top-16 z-40">
+        <div className="container px-4 md:px-6 lg:px-8">
+          <SearchBar />
+        </div>
+      </div>
+      
       <CategoryFilters />
       <main className="flex-1">
         <div className="container px-4 md:px-6 lg:px-8 py-8">
