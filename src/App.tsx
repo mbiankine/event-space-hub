@@ -10,6 +10,10 @@ import SpaceDetail from "./pages/SpaceDetail";
 import ClientDashboard from "./pages/client/Dashboard";
 import HostDashboard from "./pages/host/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -19,14 +23,33 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/spaces/:id" element={<SpaceDetail />} />
-          <Route path="/client/dashboard" element={<ClientDashboard />} />
-          <Route path="/host/dashboard" element={<HostDashboard />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/spaces/:id" element={<SpaceDetail />} />
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/register" element={<Register />} />
+            
+            {/* Protected routes for clients */}
+            <Route element={<ProtectedRoute requiredRoles={['client']} />}>
+              <Route path="/client/dashboard" element={<ClientDashboard />} />
+            </Route>
+            
+            {/* Protected routes for hosts */}
+            <Route element={<ProtectedRoute requiredRoles={['host']} />}>
+              <Route path="/host/dashboard" element={<HostDashboard />} />
+            </Route>
+            
+            {/* Protected routes for admins */}
+            <Route element={<ProtectedRoute requiredRoles={['admin']} />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            </Route>
+            
+            {/* Not found route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
