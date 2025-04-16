@@ -59,7 +59,7 @@ const ManageSpaces = () => {
           .from('spaces')
           .select('*')
           .eq('host_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }) as { data: Space[], error: any };
           
         if (error) throw error;
         setSpaces(data || []);
@@ -79,7 +79,7 @@ const ManageSpaces = () => {
       const { error } = await supabase
         .from('spaces')
         .delete()
-        .eq('id', id);
+        .eq('id', id) as { error: any };
         
       if (error) throw error;
       

@@ -1,4 +1,3 @@
-
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Link } from "react-router-dom";
@@ -41,7 +40,7 @@ const HostDashboard = () => {
         const { data: spacesData } = await supabase
           .from('spaces')
           .select('*')
-          .limit(3);
+          .limit(3) as {data: any[]};
           
         setSpaces(spacesData || []);
         

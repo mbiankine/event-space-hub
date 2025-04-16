@@ -39,6 +39,54 @@ export type Database = {
         }
         Relationships: []
       }
+      spaces: {
+        Row: {
+          amenities: string[] | null
+          availability: string[] | null
+          capacity: number
+          created_at: string | null
+          description: string
+          host_id: string
+          id: string
+          images: string[] | null
+          location: Json
+          price: number
+          space_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          amenities?: string[] | null
+          availability?: string[] | null
+          capacity: number
+          created_at?: string | null
+          description: string
+          host_id: string
+          id?: string
+          images?: string[] | null
+          location: Json
+          price: number
+          space_type: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          amenities?: string[] | null
+          availability?: string[] | null
+          capacity?: number
+          created_at?: string | null
+          description?: string
+          host_id?: string
+          id?: string
+          images?: string[] | null
+          location?: Json
+          price?: number
+          space_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

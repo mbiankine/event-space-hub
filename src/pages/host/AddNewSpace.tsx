@@ -35,7 +35,7 @@ const AddNewSpace = () => {
           amenities: values.amenities,
           host_id: user.id,
           availability: values.availability.map((date: Date) => date.toISOString().split('T')[0]),
-        })
+        } as any)
         .select()
         .single();
 
@@ -64,7 +64,7 @@ const AddNewSpace = () => {
           .from('spaces')
           .update({
             images: uploadedPaths
-          })
+          } as any)
           .eq('id', spaceData.id);
           
         if (updateError) throw updateError;
