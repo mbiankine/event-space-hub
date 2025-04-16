@@ -15,6 +15,10 @@ import Register from "./pages/auth/Register";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
+// Host routes
+import AddNewSpace from "./pages/host/AddNewSpace";
+import ManageSpaces from "./pages/host/ManageSpaces";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -39,6 +43,9 @@ const App = () => (
             {/* Protected routes for hosts */}
             <Route element={<ProtectedRoute requiredRoles={['host']} />}>
               <Route path="/host/dashboard" element={<HostDashboard />} />
+              <Route path="/host/spaces" element={<ManageSpaces />} />
+              <Route path="/host/spaces/new" element={<AddNewSpace />} />
+              {/* Add more host routes as needed */}
             </Route>
             
             {/* Protected routes for admins */}
