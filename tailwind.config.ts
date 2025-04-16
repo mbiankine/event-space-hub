@@ -61,7 +61,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+                eventspace: {
+                    50: '#F8F9FB',
+                    100: '#EEF1F5',
+                    200: '#E3E8F0',
+                    300: '#D0D9E8',
+                    400: '#A3B8D9',
+                    500: '#FF385C',  // Brand color (Airbnb-inspired)
+                    600: '#E41E4D',
+                    700: '#C31C45',
+                    800: '#A11A3C',
+                    900: '#75142C',
+                }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
