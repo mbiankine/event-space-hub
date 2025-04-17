@@ -12,7 +12,7 @@ import HostDashboard from "./pages/host/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider } from "./contexts/auth/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Host routes
