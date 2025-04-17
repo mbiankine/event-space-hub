@@ -1,22 +1,59 @@
 
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, StoreIcon, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { ArrowLeft, StoreIcon, CheckCircle2, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const StripeConfig = () => {
   const navigate = useNavigate();
   const { hasRole } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isProduction, setIsProduction] = useState(false);
+  const [testApiKey, setTestApiKey] = useState("");
+  const [prodApiKey, setProdApiKey] = useState("");
+  const [stripeConnected, setStripeConnected] = useState(false);
 
   if (!hasRole('admin')) {
     navigate('/');
     return null;
   }
 
-  const stripeConnected = true; // Placeholder for real Stripe connection status
+  const handleSaveKeys = async () => {
+    try {
+      setIsLoading(true);
+      
+      // In a real implementation, this would save keys securely via a function
+      const { error } = await supabase.functions.invoke('save-stripe-keys', {
+        body: { 
+          testApiKey: testApiKey, 
+          prodApiKey: isProduction ? prodApiKey : null,
+          mode: isProduction ? 'production' : 'test'
+        }
+      });
+      
+      if (error) throw error;
+      
+      setStripeConnected(true);
+      toast.success("Configurações do Stripe salvas com sucesso!");
+    } catch (error) {
+      console.error("Error saving Stripe keys:", error);
+      toast.error("Erro ao salvar configurações do Stripe");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleMode = (value) => {
+    setIsProduction(value);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -78,15 +115,39 @@ const StripeConfig = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">Modo:</span>
-                  <span>Teste</span>
+                  <span>{isProduction ? 'Produção' : 'Teste'}</span>
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <div>
+                    <h4 className="text-sm font-semibold">Modo Produção</h4>
+                    <p className="text-xs text-muted-foreground">Ativar modo de produção para pagamentos reais</p>
+                  </div>
+                  <Switch 
+                    checked={isProduction} 
+                    onCheckedChange={handleToggleMode}
+                  />
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
-              <Button className="w-full" variant="outline">
-                Atualizar Chaves API
+              <Button 
+                className="w-full" 
+                onClick={handleSaveKeys}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : "Salvar Configurações"}
               </Button>
-              <Button className="w-full" variant="ghost" disabled>
+              <Button 
+                className="w-full" 
+                variant="outline"
+                disabled={!stripeConnected}
+                onClick={() => window.open("https://dashboard.stripe.com", "_blank")}
+              >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Acessar Dashboard Stripe
               </Button>
@@ -95,44 +156,60 @@ const StripeConfig = () => {
           
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Configurações de Pagamento</CardTitle>
-              <CardDescription>Gerencie as opções de pagamento e taxas</CardDescription>
+              <CardTitle className="text-xl">Credenciais do Stripe</CardTitle>
+              <CardDescription>Configure suas chaves de API do Stripe</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Taxa de Serviço (%)</label>
-                <div className="flex">
-                  <input type="number" defaultValue="10" 
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" 
-                  />
-                  <Button variant="outline" className="ml-2">Salvar</Button>
-                </div>
+                <label className="text-sm font-medium">Chave Secreta de Teste</label>
+                <Input 
+                  type="password"
+                  placeholder="sk_test_..." 
+                  value={testApiKey}
+                  onChange={(e) => setTestApiKey(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground">
-                  Percentual cobrado sobre cada reserva como taxa de serviço.
+                  Chave secreta para ambiente de testes. Formato: sk_test_...
                 </p>
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Moeda Padrão</label>
-                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                  <option value="BRL">Real Brasileiro (BRL)</option>
-                  <option value="USD">Dólar Americano (USD)</option>
-                  <option value="EUR">Euro (EUR)</option>
-                </select>
-              </div>
+              {isProduction && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Chave Secreta de Produção</label>
+                  <Input 
+                    type="password"
+                    placeholder="sk_live_..." 
+                    value={prodApiKey}
+                    onChange={(e) => setProdApiKey(e.target.value)}
+                    className="border-amber-400"
+                  />
+                  <p className="text-xs text-amber-500">
+                    <AlertCircle className="h-3 w-3 inline mr-1" />
+                    Cuidado! Esta é sua chave de produção para pagamentos reais.
+                  </p>
+                </div>
+              )}
               
-              <div className="flex items-center space-x-2">
-                <input type="checkbox" id="instantPayout" 
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
-                  defaultChecked 
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Webhook Secret (Opcional)</label>
+                <Input 
+                  type="password"
+                  placeholder="whsec_..." 
                 />
-                <label htmlFor="instantPayout" className="text-sm font-medium">
-                  Permitir pagamentos instantâneos para anfitriões
-                </label>
+                <p className="text-xs text-muted-foreground">
+                  Secret para verificar webhooks do Stripe.
+                </p>
               </div>
             </CardContent>
             <CardFooter>
-              <Button className="w-full">Salvar Configurações</Button>
+              <Button className="w-full" onClick={handleSaveKeys} disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : "Salvar Credenciais"}
+              </Button>
             </CardFooter>
           </Card>
         </div>

@@ -1,1 +1,20 @@
+
 project_id = "gxxxqmthymdepqvxsaxc"
+
+[api]
+enabled = true
+
+[db]
+enabled = false
+
+[realtime]
+enabled = false
+
+[storage]
+enabled = false
+
+[edge_functions]
+enabled = true
+
+[edge_functions.save-stripe-keys]
+verify_jwt = true
