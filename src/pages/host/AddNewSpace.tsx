@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SpaceForm } from '@/components/host/SpaceForm';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { toast } from 'sonner';
 
 const AddNewSpace = () => {
@@ -151,7 +151,7 @@ const AddNewSpace = () => {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card text-card-foreground rounded-lg shadow p-6">
           <SpaceForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
         </div>
       </main>

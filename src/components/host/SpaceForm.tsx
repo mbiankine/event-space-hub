@@ -92,7 +92,7 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-foreground">
         {/* Basic Information */}
         <BasicInfoSection control={form.control} />
         
