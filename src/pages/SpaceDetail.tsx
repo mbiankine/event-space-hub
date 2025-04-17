@@ -24,6 +24,7 @@ import { BookingFormModal } from "@/components/space/BookingFormModal";
 import { useStripeConfig } from "@/hooks/useStripeConfig";
 import { InquiryForm } from "@/components/space/InquiryForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HostProfileCard } from "@/components/host/HostProfileCard";
 
 const bookingFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -399,7 +400,6 @@ const SpaceDetail = () => {
                   Até {space.capacity} pessoas
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-gray-300"></div>
             </div>
             
             <Separator className="my-6" />
@@ -415,18 +415,21 @@ const SpaceDetail = () => {
             
             <Separator className="my-6" />
             
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Enviar mensagem ao anfitrião</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <InquiryForm 
-                  hostId={space.host_id}
-                  spaceId={space.id}
-                  spaceTitle={space.title}
-                />
-              </CardContent>
-            </Card>
+            <HostProfileCard
+              hostId={space.host_id}
+              spaceTitle={space.title}
+              hostName="Anfitrião"
+              rating={4.99}
+              reviewCount={89}
+              yearsHosting={4}
+              responseRate={100}
+              responseTime="1 hora"
+              coHosts={[
+                { id: '1', name: 'Pedro Müller' },
+                { id: '2', name: 'Marcia' }
+              ]}
+              onMessageClick={() => setIsBookingModalOpen(true)}
+            />
           </div>
           
           <div className="space-y-6">
