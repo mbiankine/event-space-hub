@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -7,16 +7,24 @@ import { LoadingState } from "@/components/host/LoadingState";
 import { SpaceHeader } from "@/components/space/SpaceHeader";
 import { SpaceGallery } from "@/components/space/SpaceGallery";
 import { SpaceContent } from "@/components/space/SpaceContent";
-import { BookingCard } from "@/components/space/BookingCard";
+import { BookingCard } from "@/components/space/booking/BookingCard";
 import { AuthDialog } from "@/components/space/AuthDialog";
 import { BookingFormModal } from "@/components/space/BookingFormModal";
 import { useSpaceDetail } from "@/hooks/useSpaceDetail";
 import { useSpaceBooking } from "@/hooks/useSpaceBooking";
+import { supabase } from '@/integrations/supabase/client';
 
 const SpaceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // State for booking form
+  const [date, setDate] = useState<Date>();
+  const [guests, setGuests] = useState(25);
+  const [selectedHours, setSelectedHours] = useState(4);
+  const [selectedDays, setSelectedDays] = useState(1);
+  const [bookingType, setBookingType] = useState<"hourly" | "daily">("hourly");
   
   const {
     space,
@@ -79,8 +87,19 @@ const SpaceDetail = () => {
           <div className="space-y-6">
             <BookingCard 
               space={space}
-              unavailableDates={unavailableDates}
+              date={date}
+              setDate={setDate}
+              guests={guests}
+              setGuests={setGuests}
+              selectedHours={selectedHours}
+              setSelectedHours={setSelectedHours}
+              selectedDays={selectedDays}
+              setSelectedDays={setSelectedDays}
+              bookingType={bookingType}
+              setBookingType={setBookingType}
+              isDateAvailable={(date) => !unavailableDates.some(d => d.getTime() === date.getTime())}
               handleBookNow={handleBookNow}
+              unavailableDates={unavailableDates}
             />
           </div>
         </div>
@@ -105,7 +124,7 @@ const SpaceDetail = () => {
           form={form}
           space={space}
           isSubmitting={isSubmitting}
-          isDateAvailable={date => !unavailableDates.some(d => d.getTime() === date.getTime())}
+          isDateAvailable={(date) => !unavailableDates.some(d => d.getTime() === date.getTime())}
           bookingConfirmed={bookingConfirmed}
           isProcessingPayment={false}
         />

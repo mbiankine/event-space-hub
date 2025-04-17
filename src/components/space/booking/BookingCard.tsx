@@ -1,19 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { useStripeConfig } from '@/hooks/useStripeConfig';
 import { BookingTypeSelector } from './BookingTypeSelector';
 import { BookingDateSelector } from './BookingDateSelector';
 import { GuestCounter } from './GuestCounter';
 import { DurationSelector } from './DurationSelector';
 import { BookingPriceSummary } from './BookingPriceSummary';
+import { BookingErrorDialog } from './BookingErrorDialog';
+import { Space } from '@/types/SpaceTypes';
 
 interface BookingCardProps {
-  space: any;
+  space: Space;
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
   guests: number;
@@ -25,7 +24,7 @@ interface BookingCardProps {
   bookingType: "hourly" | "daily";
   setBookingType: (type: "hourly" | "daily") => void;
   isDateAvailable: (date: Date) => boolean;
-  handleBookNow: () => Promise<{ success: boolean; bookingId?: string }>;
+  handleBookNow: () => Promise<{ success: boolean, bookingId?: string }>;
   unavailableDates: Date[];
 }
 
@@ -46,52 +45,9 @@ export function BookingCard({
   unavailableDates
 }: BookingCardProps) {
   const { user, isLoading: authLoading } = useAuth();
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
-  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
-  const [selectedDateRange, setSelectedDateRange] = useState<Date[]>([]);
-  const { startStripeCheckout } = useStripeConfig();
-
-  // Update date range when date changes
-  useEffect(() => {
-    if (date && bookingType === 'daily' && selectedDays > 1) {
-      calculatePossibleDateRange(date);
-    } else {
-      setSelectedDateRange(date ? [date] : []);
-    }
-  }, [date, selectedDays, bookingType, unavailableDates]);
-
-  const calculatePossibleDateRange = (startDate: Date) => {
-    if (!startDate) return;
-    
-    const range: Date[] = [startDate];
-    let canAddMore = true;
-    let currentDay = 1;
-    
-    while (canAddMore && currentDay < selectedDays) {
-      const nextDate = new Date(startDate);
-      nextDate.setDate(nextDate.getDate() + currentDay);
-      
-      if (isDateAvailable(nextDate)) {
-        range.push(nextDate);
-        currentDay++;
-      } else {
-        canAddMore = false;
-        setSelectedDays(range.length);
-        toast.info(`Só é possível reservar ${range.length} dia(s) consecutivos devido a indisponibilidade de datas.`);
-      }
-    }
-    
-    setSelectedDateRange(range);
-  };
-
-  const calculateTotalPrice = () => {
-    if (bookingType === 'hourly' && space.hourly_price) {
-      return space.hourly_price * selectedHours;
-    }
-    return space.price * selectedDays;
-  };
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
+  const [paymentError, setPaymentError] = React.useState<string | null>(null);
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = React.useState(false);
 
   const handleReserveClick = async () => {
     if (!user) {
@@ -107,34 +63,13 @@ export function BookingCard({
       if (!bookingResult || !bookingResult.success) {
         throw new Error('Falha ao criar reserva');
       }
-      
-      if (bookingResult.bookingId) {
-        setConfirmedBookingId(bookingResult.bookingId);
-        handleProceedToPayment();
-      }
     } catch (error: any) {
       console.error('Booking error:', error);
       setPaymentError(error.message || 'Erro ao processar a reserva. Por favor, tente novamente.');
       setIsErrorDialogOpen(true);
+    } finally {
       setIsProcessingPayment(false);
     }
-  };
-
-  const handleProceedToPayment = async () => {
-    if (!confirmedBookingId || !space) {
-      console.error("Missing booking ID or space details for payment");
-      toast.error("Dados incompletos para pagamento");
-      return;
-    }
-
-    const totalPrice = calculateTotalPrice();
-    
-    await startStripeCheckout(
-      space.id, 
-      totalPrice, 
-      bookingType === 'daily' ? selectedDays : undefined,
-      confirmedBookingId
-    );
   };
 
   return (
@@ -163,7 +98,7 @@ export function BookingCard({
             date={date}
             setDate={setDate}
             isDateAvailable={isDateAvailable}
-            selectedDateRange={selectedDateRange}
+            selectedDateRange={[]}
             selectedDays={selectedDays}
             setSelectedDays={setSelectedDays}
             bookingType={bookingType}
@@ -191,7 +126,9 @@ export function BookingCard({
             hourlyPrice={space.hourly_price}
             selectedHours={selectedHours}
             selectedDays={selectedDays}
-            totalPrice={calculateTotalPrice()}
+            totalPrice={bookingType === 'hourly' ? 
+              (space.hourly_price || 0) * selectedHours : 
+              space.price * selectedDays}
           />
         </CardContent>
         <CardFooter>
@@ -205,19 +142,11 @@ export function BookingCard({
         </CardFooter>
       </Card>
       
-      <Dialog open={isErrorDialogOpen} onOpenChange={setIsErrorDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Erro no Processamento</DialogTitle>
-            <DialogDescription>
-              {paymentError}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setIsErrorDialogOpen(false)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BookingErrorDialog
+        isOpen={isErrorDialogOpen}
+        onOpenChange={setIsErrorDialogOpen}
+        error={paymentError}
+      />
     </>
   );
 }
