@@ -91,8 +91,8 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
   };
 
   const handleSubmitForm = (values: SpaceFormValues) => {
-    // Ensure we call the onSubmit prop with the form values
     console.log("Form submitted with values:", values);
+    // Call the onSubmit prop directly with the values
     onSubmit(values);
   };
 
