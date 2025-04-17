@@ -1,66 +1,45 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import SpaceDetail from "./pages/SpaceDetail";
-import ClientDashboard from "./pages/client/Dashboard";
-import HostDashboard from "./pages/host/Dashboard";
-import AdminDashboard from "./pages/admin/Dashboard";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import { AuthProvider } from "./contexts/auth/AuthContext";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import './App.css';
 
-// Host routes
-import AddNewSpace from "./pages/host/AddNewSpace";
-import ManageSpaces from "./pages/host/ManageSpaces";
-import HostBookings from "./pages/host/Bookings";
-import BookingDetail from "./pages/host/BookingDetail";
+import AddNewSpace from '@/pages/host/AddNewSpace';
+import ManageSpaces from '@/pages/host/ManageSpaces';
+import Index from '@/pages/Index';
+import SpaceDetail from '@/pages/SpaceDetail';
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { StorageInit } from '@/components/storage/StorageInit';
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/spaces/:id" element={<SpaceDetail />} />
-            <Route path="/auth/login" element={<Login />} />
-            <Route path="/auth/register" element={<Register />} />
-            
-            {/* Protected routes for clients */}
-            <Route element={<ProtectedRoute requiredRole='client' />}>
-              <Route path="/client/dashboard" element={<ClientDashboard />} />
-            </Route>
-            
-            {/* Protected routes for hosts */}
-            <Route element={<ProtectedRoute requiredRole='host' />}>
-              <Route path="/host/dashboard" element={<HostDashboard />} />
-              <Route path="/host/spaces" element={<ManageSpaces />} />
-              <Route path="/host/spaces/new" element={<AddNewSpace />} />
-              <Route path="/host/bookings" element={<HostBookings />} />
-              <Route path="/host/bookings/:id" element={<BookingDetail />} />
-            </Route>
-            
-            {/* Protected routes for admins */}
-            <Route element={<ProtectedRoute requiredRole='admin' />}>
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            </Route>
-            
-            {/* Not found route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <Router>
+      <StorageInit />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/spaces/:id" element={<SpaceDetail />} />
+        
+        {/* Auth routes */}
+        <Route path="/auth/login" element={<Login />} />
+        <Route path="/auth/register" element={<Register />} />
+        
+        {/* Protected host routes */}
+        <Route 
+          path="/host/spaces" 
+          element={<ProtectedRoute requiredRole="host"><ManageSpaces /></ProtectedRoute>} 
+        />
+        <Route 
+          path="/host/spaces/new" 
+          element={<ProtectedRoute requiredRole="host"><AddNewSpace /></ProtectedRoute>} 
+        />
+        
+        {/* Catch-all route */}
+        <Route path="*" element={<Index />} />
+      </Routes>
+      <Toaster position="top-right" />
+    </Router>
+  );
+}
 
 export default App;

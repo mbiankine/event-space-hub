@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { FormSection } from './FormSection';
 
@@ -9,7 +9,7 @@ interface ImageUploadSectionProps {
 }
 
 export function ImageUploadSection({ onChange, initialImages = [] }: ImageUploadSectionProps) {
-  const [uploadedImages, setUploadedImages] = useState<File[]>(initialImages);
+  const [uploadedImages, setUploadedImages] = useState<File[]>(initialImages || []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {

@@ -1,4 +1,5 @@
 
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -24,45 +25,91 @@ import {
   Heart,
   ArrowLeft,
 } from "lucide-react";
-import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Link, useParams } from "react-router-dom";
-
-// Mock data - in a real app this would come from an API
-const space = {
-  id: "1",
-  title: "Salão Espaço Prime",
-  description:
-    "Um espaço perfeito para seu evento, com ampla área para convidados, iluminação sofisticada e ambiente climatizado. Ideal para casamentos, formaturas, congressos e eventos corporativos.",
-  location: "São Paulo, SP",
-  price: 1200,
-  rating: 4.97,
-  reviews: 127,
-  host: "Ana Martins",
-  hostSince: "2019",
-  hostRating: 4.98,
-  maxGuests: 150,
-  images: [
-    "https://images.unsplash.com/photo-1605774337664-7a846e9cdf17?w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1526041092449-209d556f7a32?w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1544984243-ec57ea16fe25?w=800&auto=format&fit=crop",
-  ],
-  amenities: ["Wi-Fi", "Sistema de Som", "Catering", "Estacionamento", "Projetor", "Iluminação"],
-};
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { supabase } from '@/integrations/supabase/client';
+import { LoadingState } from "@/components/host/LoadingState";
 
 const SpaceDetail = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [space, setSpace] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { id } = useParams();
+  const navigate = useNavigate();
   
+  useEffect(() => {
+    const fetchSpace = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('spaces')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (error) throw error;
+        setSpace(data);
+      } catch (error) {
+        console.error('Error fetching space:', error);
+        // Navigate back if space not found
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSpace();
+  }, [id, navigate]);
+
+  // Function to get image URLs from Supabase Storage
+  const getImageUrls = (space: any) => {
+    if (!space || !space.images) return [];
+    
+    return space.images.map((imagePath: string) => {
+      const { data } = supabase.storage
+        .from('spaces')
+        .getPublicUrl(imagePath);
+      return data.publicUrl;
+    });
+  };
+  
+  if (isLoading) return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 container px-4 md:px-6 lg:px-8 py-6 flex items-center justify-center">
+        <LoadingState />
+      </main>
+      <Footer />
+    </div>
+  );
+  
+  if (!space) return null;
+  
+  const imageUrls = getImageUrls(space);
+  
+  // Helper function to map amenities to icons
+  const getAmenityIcon = (amenity: string) => {
+    const amenityMap: Record<string, any> = {
+      "Wi-Fi": <Wifi className="h-5 w-5" />,
+      "Sistema de Som": <Music className="h-5 w-5" />,
+      "Catering": <UtensilsCrossed className="h-5 w-5" />,
+      "Estacionamento": <ParkingCircle className="h-5 w-5" />,
+      "Projetor": <Tv className="h-5 w-5" />,
+      "Iluminação": <Volume2 className="h-5 w-5" />,
+    };
+    
+    return amenityMap[amenity] || <Wifi className="h-5 w-5" />;
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container px-4 md:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-4">
-          <Button variant="ghost" size="sm" className="rounded-full">
+          <Button variant="ghost" size="sm" className="rounded-full" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
@@ -72,11 +119,11 @@ const SpaceDetail = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4 fill-current" />
-            <span>{space.rating}</span>
+            <span>4.9</span>
             <span className="mx-1">·</span>
-            <span className="underline">{space.reviews} avaliações</span>
+            <span className="underline">Novo</span>
             <span className="mx-1">·</span>
-            <span>{space.location}</span>
+            <span>{space.location.city}, {space.location.state}</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="rounded-full">
@@ -92,50 +139,43 @@ const SpaceDetail = () => {
         
         {/* Image Gallery */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-8">
-          <div className="md:col-span-2 row-span-2">
-            <img
-              src={space.images[0]}
-              alt={space.title}
-              className="w-full h-full object-cover rounded-l-xl"
-            />
-          </div>
-          <div>
-            <img
-              src={space.images[1]}
-              alt={space.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div>
-            <img
-              src={space.images[2]}
-              alt={space.title}
-              className="w-full h-full object-cover rounded-tr-xl"
-            />
-          </div>
-          <div>
-            <img
-              src={space.images[3]}
-              alt={space.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div>
-            <img
-              src={space.images[4]}
-              alt={space.title}
-              className="w-full h-full object-cover rounded-br-xl"
-            />
-          </div>
+          {imageUrls.length > 0 ? (
+            <>
+              <div className="md:col-span-2 row-span-2">
+                <img
+                  src={imageUrls[0]}
+                  alt={space.title}
+                  className="w-full h-full object-cover rounded-l-xl"
+                />
+              </div>
+              {imageUrls.slice(1, 5).map((url: string, index: number) => (
+                <div key={index}>
+                  <img
+                    src={url}
+                    alt={`${space.title} ${index + 1}`}
+                    className={`w-full h-full object-cover ${index === 0 ? 'rounded-tr-xl' : index === 3 ? 'rounded-br-xl' : ''}`}
+                  />
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="md:col-span-4 aspect-video">
+              <img
+                src="https://images.unsplash.com/photo-1522770179533-24471fcdba45?w=800&auto=format&fit=crop"
+                alt={space.title}
+                className="w-full h-full object-cover rounded-xl"
+              />
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-xl font-semibold">Espaço inteiro hospedado por {space.host}</h2>
+                <h2 className="text-xl font-semibold">Espaço inteiro hospedado por Anfitrião</h2>
                 <p className="text-muted-foreground">
-                  Até {space.maxGuests} pessoas
+                  Até {space.capacity} pessoas
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-gray-300"></div>
@@ -153,30 +193,12 @@ const SpaceDetail = () => {
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-4">O que este lugar oferece</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <Wifi className="h-5 w-5" />
-                  <span>Wi-Fi</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Music className="h-5 w-5" />
-                  <span>Sistema de Som</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <UtensilsCrossed className="h-5 w-5" />
-                  <span>Catering</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ParkingCircle className="h-5 w-5" />
-                  <span>Estacionamento</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Tv className="h-5 w-5" />
-                  <span>Projetor</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Volume2 className="h-5 w-5" />
-                  <span>Iluminação</span>
-                </div>
+                {space.amenities && space.amenities.map((amenity: string, index: number) => (
+                  <div key={index} className="flex items-center gap-2">
+                    {getAmenityIcon(amenity)}
+                    <span>{amenity}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -184,8 +206,16 @@ const SpaceDetail = () => {
           <div>
             <Card className="sticky top-24">
               <CardHeader>
-                <CardTitle>R$ {space.price}</CardTitle>
-                <CardDescription>por diária</CardDescription>
+                <CardTitle>
+                  {space.pricing_type === 'hourly' 
+                    ? `R$ ${space.hourly_price}`
+                    : `R$ ${space.price}`}
+                </CardTitle>
+                <CardDescription>
+                  {space.pricing_type === 'hourly' 
+                    ? 'por hora' 
+                    : 'por diária'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
@@ -205,9 +235,10 @@ const SpaceDetail = () => {
                       <span>Número de convidados</span>
                     </div>
                     <select className="bg-transparent">
-                      <option>50</option>
-                      <option>100</option>
-                      <option>150</option>
+                      {[...Array(Math.min(5, Math.ceil(space.capacity / 25)))].map((_, i) => (
+                        <option key={i} value={(i + 1) * 25}>{(i + 1) * 25}</option>
+                      ))}
+                      <option value={space.capacity}>{space.capacity}</option>
                     </select>
                   </div>
                 </div>

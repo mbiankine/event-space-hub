@@ -38,7 +38,16 @@ export const SpaceCard = ({ space, onDelete }: SpaceCardProps) => {
         <CardDescription>{`${space.location.city}, ${space.location.state}`}</CardDescription>
       </CardHeader>
       <CardContent className="pb-2">
-        <p className="text-sm font-medium">R$ {space.price?.toFixed(2)} / diária</p>
+        <p className="text-sm font-medium">
+          {space.pricing_type === 'both' || space.pricing_type === 'daily' 
+            ? `R$ ${space.price?.toFixed(2)} / diária` 
+            : ''}
+        </p>
+        {(space.pricing_type === 'both' || space.pricing_type === 'hourly') && space.hourly_price && (
+          <p className="text-sm font-medium">
+            R$ {space.hourly_price?.toFixed(2)} / hora
+          </p>
+        )}
         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
           {space.description}
         </p>

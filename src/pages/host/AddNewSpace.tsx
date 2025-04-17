@@ -41,7 +41,7 @@ const AddNewSpace = () => {
         ...(values.customAmenities || [])
       ];
 
-      // Fazer ajustes nos valores de acordo com o tipo de preço
+      // Adjust values according to pricing type
       let price = null;
       let hourlyPrice = null;
       
@@ -128,7 +128,7 @@ const AddNewSpace = () => {
       }
       
       toast.success("Seu espaço foi publicado com sucesso!");
-      // Redirecionar para a página de espaços após um breve delay para mostrar o toast
+      // Redirect to spaces page after a brief delay to show the toast
       setTimeout(() => {
         navigate('/host/spaces');
       }, 1500);
