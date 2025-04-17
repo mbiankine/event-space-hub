@@ -77,6 +77,7 @@ export const useBookingActions = (space: any) => {
   return {
     isSubmitting,
     bookingConfirmed,
+    setBookingConfirmed,
     confirmedBookingId,
     onSubmit,
     calculateTotalPrice

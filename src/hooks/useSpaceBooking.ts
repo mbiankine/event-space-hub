@@ -10,7 +10,7 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user } = useAuth();
   const form = useBookingForm();
-  const { isSubmitting, bookingConfirmed, confirmedBookingId, onSubmit } = useBookingActions(space);
+  const { isSubmitting, bookingConfirmed, setBookingConfirmed, confirmedBookingId, onSubmit } = useBookingActions(space);
   const { startStripeCheckout } = useStripeConfig();
 
   const handleBookNow = async (bookingDetails?: {
