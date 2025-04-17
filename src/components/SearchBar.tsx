@@ -61,10 +61,10 @@ export const SearchBar = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white p-2 rounded-full border shadow-sm flex items-center">
+    <div className="w-full max-w-4xl mx-auto bg-background p-2 rounded-full border shadow-sm flex items-center">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-2 min-w-[140px] justify-start py-6 px-4 border-r">
+          <Button variant="ghost" className="flex items-center gap-2 min-w-[140px] justify-start py-6 px-4 border-r border-border">
             <MapPin className="h-4 w-4" />
             <span className="text-sm truncate">
               {isLoading ? 'Carregando...' : location ? `${location.city}, ${location.state}` : 'Localização'}
@@ -98,7 +98,7 @@ export const SearchBar = () => {
       
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-2 min-w-[120px] justify-start py-6 px-4 border-r">
+          <Button variant="ghost" className="flex items-center gap-2 min-w-[120px] justify-start py-6 px-4 border-r border-border">
             <Calendar className="h-4 w-4" />
             <span className="text-sm truncate">Data</span>
           </Button>
@@ -107,7 +107,7 @@ export const SearchBar = () => {
           <div className="p-4">
             <h4 className="text-sm font-medium mb-2">Selecione uma data</h4>
             {/* Aqui você pode adicionar um seletor de data */}
-            <p className="text-sm text-gray-500">Funcionalidade de calendário a ser implementada</p>
+            <p className="text-sm text-muted-foreground">Funcionalidade de calendário a ser implementada</p>
           </div>
         </PopoverContent>
       </Popover>
@@ -123,7 +123,7 @@ export const SearchBar = () => {
           <div className="p-4">
             <h4 className="text-sm font-medium mb-2">Número de convidados</h4>
             {/* Aqui você pode adicionar um seletor de quantidade */}
-            <p className="text-sm text-gray-500">Funcionalidade de convidados a ser implementada</p>
+            <p className="text-sm text-muted-foreground">Funcionalidade de convidados a ser implementada</p>
           </div>
         </PopoverContent>
       </Popover>
@@ -132,7 +132,7 @@ export const SearchBar = () => {
         onClick={handleSearch}
         className="rounded-full bg-primary ml-auto px-6 py-6 flex items-center"
       >
-        <Search className="h-5 w-5 text-white" />
+        <Search className="h-5 w-5 text-primary-foreground" />
       </Button>
     </div>
   );
