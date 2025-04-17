@@ -9,7 +9,7 @@ import Index from '@/pages/Index';
 import SpaceDetail from '@/pages/SpaceDetail';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import ProtectedRoute from '@/components/ProtectedRoute'; // Update this import
 import { StorageInit } from '@/components/storage/StorageInit';
 
 function App() {

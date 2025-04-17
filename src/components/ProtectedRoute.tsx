@@ -6,9 +6,10 @@ import { UserRole } from '@/contexts/auth/types';
 
 interface ProtectedRouteProps {
   requiredRole?: UserRole;
+  children?: React.ReactNode;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole, children }) => {
   const { user, accountType, roles, isLoading } = useAuth();
   const location = useLocation();
   
@@ -25,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
     // Se o usuário é anfitrião, ele pode acessar as rotas de cliente também
     if (requiredRole === 'client' && roles.includes('host')) {
       // Permitir acesso se o anfitrião tentar acessar a área do cliente
-      return <Outlet />;
+      return children ? <>{children}</> : <Outlet />;
     } 
     
     // Verificar o papel do usuário normalmente
@@ -40,5 +41,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
     }
   }
 
-  return <Outlet />;
+  return children ? <>{children}</> : <Outlet />;
 };
+
+export default ProtectedRoute; // Add this line to provide a default export
