@@ -1,108 +1,88 @@
 
+import React, { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { useAuth } from "@/contexts/auth/AuthContext";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { DashboardStats } from "@/components/host/DashboardStats";
-import { QuickMenu } from "@/components/host/QuickMenu";
-import { DashboardTabs } from "@/components/host/DashboardTabs";
-import { toast } from "sonner";
-import { Booking } from "@/types/BookingTypes";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Space } from '@/types/SpaceTypes';
+import { Booking } from '@/types/BookingTypes';
+import { QuickMenu } from '@/components/host/QuickMenu';
+import { DashboardTabs } from '@/components/host/DashboardTabs';
+import { DashboardStats } from '@/components/host/DashboardStats';
+import { toast } from 'sonner';
 
 const HostDashboard = () => {
-  const { profile, user } = useAuth();
-  const [stats, setStats] = useState({
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+
+  const mockStats = {
     totalSpaces: 0,
     totalBookings: 0,
     totalRevenue: 0,
-    averageRating: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [spaces, setSpaces] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+    averageRating: 4.9,
+  };
 
   useEffect(() => {
     if (!user) return;
     
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch spaces for this host
+        // Fetch spaces
         const { data: spacesData, error: spacesError } = await supabase
           .from('spaces')
           .select('*')
-          .eq('host_id', user.id);
+          .eq('host_id', user.id)
+          .order('created_at', { ascending: false }) as { data: Space[], error: any };
           
         if (spacesError) throw spacesError;
-        setSpaces(spacesData || []);
         
-        // Fetch recent bookings
+        // Fetch bookings
         const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
           .select('*')
           .eq('host_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(5);
+          .order('booking_date', { ascending: true }) as { data: Booking[], error: any };
           
         if (bookingsError) throw bookingsError;
-        setBookings(bookingsData as Booking[] || []);
         
-        // Calculate stats
-        const totalSpacesCount = spacesData?.length || 0;
-        const totalBookingsCount = bookingsData?.length || 0;
+        setSpaces(spacesData || []);
+        setBookings(bookingsData || []);
         
-        // Sum up revenue from all bookings
-        const revenue = bookingsData?.reduce((total, booking) => 
-          total + (booking.total_price || 0), 0) || 0;
-          
-        // Calculate average rating
-        // Since average_rating doesn't exist on our space type, we'll use a mock rating for now
-        // In a real app, you'd store ratings in the database and calculate them properly
-        const avgRating = 4.5; // Mock value, would come from DB with correct schema
+        // Update mock stats
+        mockStats.totalSpaces = spacesData?.length || 0;
+        mockStats.totalBookings = bookingsData?.length || 0;
+        // Calculate total revenue from bookings
+        mockStats.totalRevenue = bookingsData?.reduce((sum, booking) => sum + (Number(booking.total_price) || 0), 0) || 0;
         
-        setStats({
-          totalSpaces: totalSpacesCount,
-          totalBookings: totalBookingsCount,
-          totalRevenue: revenue,
-          averageRating: avgRating
-        });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching dashboard data:', error);
-        toast.error('Erro ao carregar dados do painel');
+        toast.error('Erro ao carregar os dados do dashboard');
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchDashboardData();
+    fetchData();
   }, [user]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-1">Olá, {profile?.full_name || 'Anfitrião'}</h1>
-            <p className="text-muted-foreground">Gerencie seus espaços e reservas</p>
-          </div>
-          <Button asChild>
-            <Link to="/host/spaces/new">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Adicionar novo espaço
-            </Link>
-          </Button>
-        </div>
-
-        <DashboardStats stats={stats} />
+        <h1 className="text-3xl font-bold mb-6">Dashboard do Anfitrião</h1>
         
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        <DashboardStats stats={mockStats} />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <QuickMenu />
-          <DashboardTabs spaces={spaces} bookings={bookings} isLoading={isLoading} />
+          <DashboardTabs 
+            spaces={spaces.slice(0, 3)} 
+            bookings={bookings.slice(0, 5)}
+            isLoading={isLoading} 
+          />
         </div>
       </main>
       <Footer />
