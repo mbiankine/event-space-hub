@@ -26,7 +26,7 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
   return (
     <div className="col-span-1 lg:col-span-3">
       <Tabs defaultValue="spaces" className="h-full flex flex-col">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <TabsList>
             <TabsTrigger value="spaces">Meus Espaços</TabsTrigger>
             <TabsTrigger value="bookings">Reservas</TabsTrigger>
@@ -35,20 +35,20 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
         </div>
 
         <TabsContent value="spaces" className="flex-1 space-y-4 mt-4">
-          <div className="flex justify-between items-center text-left">
+          <div className="flex justify-between items-start text-left">
             <h2 className="text-xl font-semibold">Meus Espaços</h2>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/host/spaces">Ver todos</Link>
+              <Link to="/host/spaces" className="text-left">Ver todos</Link>
             </Button>
           </div>
           <SpacesList spaces={spaces} />
         </TabsContent>
 
         <TabsContent value="bookings" className="flex-1 space-y-4 mt-4">
-          <div className="flex justify-between mb-4 text-left">
+          <div className="flex justify-between items-start text-left">
             <h2 className="text-xl font-semibold">Próximas Reservas</h2>
             <Button variant="outline" asChild>
-              <Link to="/host/bookings">
+              <Link to="/host/bookings" className="text-left flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />
                 Ver Calendário
               </Link>
