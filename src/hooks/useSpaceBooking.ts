@@ -76,21 +76,24 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
     return { success: true };
   };
 
+  // Calculate the proper price based on the booking type and duration
+  const calculateTotalPrice = (values: BookingFormValues) => {
+    if (values.bookingType === 'hourly') {
+      return (space.hourly_price || 0) * values.hours;
+    } else {
+      return space.price * (values.days || 1);
+    }
+  };
+
   const onSubmit = async (values: BookingFormValues) => {
     if (!space || !user) return { success: false };
 
     setIsSubmitting(true);
     try {
-      let basePrice = 0;
+      const totalPrice = calculateTotalPrice(values);
       
-      if (values.bookingType === 'hourly') {
-        basePrice = (space.hourly_price || 0) * values.hours;
-      } else {
-        basePrice = space.price * (values.days || 1);
-      }
+      console.log("Creating booking with total price:", totalPrice);
       
-      const totalPrice = basePrice;
-
       const { data, error } = await supabase
         .from('bookings')
         .insert({
@@ -109,7 +112,7 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
           client_email: values.email,
           client_phone: values.phone,
           space_title: space.title,
-          space_price: basePrice,
+          space_price: totalPrice,
           service_fee: 0,
           total_price: totalPrice,
           status: 'pending',
@@ -142,15 +145,19 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
   const handleProceedToPayment = async () => {
     if (!confirmedBookingId || !space) return;
     
+    // Calculate the price based on current form values, not saved ones
+    const formValues = form.getValues();
     let price = 0;
     let days;
     
-    if (form.getValues('bookingType') === 'hourly') {
-      price = (space.hourly_price || 0) * form.getValues('hours');
+    if (formValues.bookingType === 'hourly') {
+      price = (space.hourly_price || 0) * formValues.hours;
     } else {
-      price = space.price * (form.getValues('days') || 1);
-      days = form.getValues('days');
+      price = space.price * (formValues.days || 1);
+      days = formValues.days;
     }
+    
+    console.log("Proceeding to payment with calculated price:", price);
     
     await startStripeCheckout(space.id, price, days, confirmedBookingId);
   };

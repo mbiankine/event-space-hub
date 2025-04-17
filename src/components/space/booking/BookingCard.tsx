@@ -10,6 +10,7 @@ import { DurationSelector } from './DurationSelector';
 import { BookingPriceSummary } from './BookingPriceSummary';
 import { BookingErrorDialog } from './BookingErrorDialog';
 import { Space } from '@/types/SpaceTypes';
+import { addDays } from 'date-fns';
 
 interface BookingCardProps {
   space: Space;
@@ -50,6 +51,9 @@ export function BookingCard({
   const [isErrorDialogOpen, setIsErrorDialogOpen] = React.useState(false);
   const [selectedDateRange, setSelectedDateRange] = React.useState<Date[]>([]);
   
+  // Calculate the minimum allowed date (2 days from now)
+  const minDate = addDays(new Date(), 2);
+  
   // Reset days when switching booking types
   React.useEffect(() => {
     if (bookingType === 'hourly') {
@@ -89,6 +93,7 @@ export function BookingCard({
     setSelectedDateRange(range);
   };
   
+  // Calculate total price based on booking type and duration
   const totalPrice = bookingType === 'hourly' ? 
     (space.hourly_price || 0) * selectedHours : 
     space.price * selectedDays;

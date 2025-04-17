@@ -1,7 +1,7 @@
 
 import { Control } from 'react-hook-form';
 import { ptBR } from 'date-fns/locale';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isBefore } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isBefore, addDays } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import {
   FormField,
@@ -26,21 +26,23 @@ interface AvailabilitySectionProps {
 }
 
 export function AvailabilitySection({ control }: AvailabilitySectionProps) {
+  // Get date 2 days from now, as the minimum allowed date
+  const minDate = addDays(new Date(), 2);
+  
   const selectAllDaysInMonth = (date: Date, onChange: (dates: Date[]) => void, currentDates: Date[]) => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const allDays = eachDayOfInterval({ start, end });
-    const today = new Date();
     
-    // Filtrar as datas para incluir apenas datas futuras ou o dia atual
+    // Filter dates to only include dates at least 2 days in the future
     const futureDays = allDays.filter(date => 
-      !isBefore(date, today) || format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'));
+      !isBefore(date, minDate));
     
-    // Filtrar datas que já estão no current month para evitar duplicatas
+    // Filter dates that already exist in current dates to avoid duplicates
     const currentDatesWithoutThisMonth = currentDates.filter(d => 
       d.getMonth() !== date.getMonth() || d.getFullYear() !== date.getFullYear());
     
-    // Adicionar todas as datas futuras do mês selecionado
+    // Add all future dates from selected month
     onChange([...currentDatesWithoutThisMonth, ...futureDays]);
   };
 
@@ -52,6 +54,9 @@ export function AvailabilitySection({ control }: AvailabilitySectionProps) {
         render={({ field }) => (
           <FormItem className="flex flex-col">
             <FormLabel>Selecione as datas disponíveis</FormLabel>
+            <div className="mb-2 text-sm text-muted-foreground">
+              Somente datas a partir de 2 dias no futuro podem ser selecionadas
+            </div>
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>
@@ -90,7 +95,7 @@ export function AvailabilitySection({ control }: AvailabilitySectionProps) {
                   mode="multiple"
                   selected={field.value}
                   onSelect={field.onChange}
-                  disabled={(date) => date < new Date() && format(date, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd')}
+                  disabled={(date) => isBefore(date, minDate)}
                   locale={ptBR}
                   className={cn("p-3 pointer-events-auto")}
                 />

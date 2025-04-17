@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,6 +26,9 @@ export const BookingDateSelector = ({
   setSelectedDays,
   bookingType
 }: BookingDateSelectorProps) => {
+  // Get the minimum allowed date (2 days from now)
+  const minDate = addDays(new Date(), 2);
+  
   const getDateRangeText = () => {
     if (!date) return "Escolha uma data";
     
@@ -113,6 +117,9 @@ export const BookingDateSelector = ({
   return (
     <div className="mb-4">
       <h4 className="font-medium mb-2">Selecione a data</h4>
+      <div className="text-sm text-muted-foreground mb-2">
+        Somente datas a partir de 2 dias no futuro podem ser reservadas
+      </div>
       <div className="border rounded-md p-3">
         <Popover>
           <PopoverTrigger asChild>
@@ -130,8 +137,8 @@ export const BookingDateSelector = ({
               selected={date}
               onSelect={handleDateSelect}
               className="p-3 pointer-events-auto"
-              fromDate={addDays(new Date(), 2)} // Minimum 2 days from today
-              disabled={(date) => !isDateAvailable(date)}
+              fromDate={minDate}
+              disabled={(date) => !isDateAvailable(date) || isBefore(date, minDate)}
               modifiers={{
                 selected: isInSelectedRange
               }}
@@ -185,4 +192,3 @@ export const BookingDateSelector = ({
     </div>
   );
 };
-

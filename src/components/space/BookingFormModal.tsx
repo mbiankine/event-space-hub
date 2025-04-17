@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Dialog,
@@ -22,9 +22,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { toast } from 'sonner';
 import { Check, CreditCard, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function BookingFormModal({
   isOpen,
@@ -39,12 +39,33 @@ export function BookingFormModal({
   isProcessingPayment,
 }) {
   const watch = form.watch();
+  const { user, profile } = useAuth();
+  
+  // Auto-fill form with user data when modal opens
+  useEffect(() => {
+    if (isOpen && user && profile && !bookingConfirmed) {
+      form.setValue('name', profile.full_name || '');
+      form.setValue('email', user.email || '');
+      if (profile.phone) {
+        form.setValue('phone', profile.phone);
+      }
+    }
+  }, [isOpen, user, profile, form, bookingConfirmed]);
   
   const handleSubmit = async (values) => {
     try {
       await onSubmit(values);
     } catch (error) {
       console.error('Error submitting form:', error);
+    }
+  };
+
+  // Calculate correct total price based on booking type
+  const getTotalPrice = () => {
+    if (watch.bookingType === 'hourly') {
+      return (space.hourly_price || 0) * watch.hours;
+    } else {
+      return space.price * (watch.days || 1);
     }
   };
 
@@ -138,9 +159,7 @@ export function BookingFormModal({
             <div className="flex justify-between font-semibold">
               <span>Total</span>
               <span>
-                R$ {watch.bookingType === 'hourly' 
-                  ? (space.hourly_price * watch.hours).toFixed(2) 
-                  : (space.price * watch.days).toFixed(2)}
+                R$ {getTotalPrice().toFixed(2)}
               </span>
             </div>
           </div>
