@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,11 +11,6 @@ interface BookingDetails {
   id: string;
   status: string;
   space_title?: string;
-}
-
-type BookingQueryResult = {
-  data: BookingDetails[] | null;
-  error: any;
 }
 
 const ReservationSuccess = () => {
@@ -36,7 +30,7 @@ const ReservationSuccess = () => {
         setIsLoading(true);
         
         console.log("Looking for booking with session ID:", sessionId);
-        const { data: bookingData, error: bookingError }: BookingQueryResult = await supabase
+        const { data: bookingData, error: bookingError } = await supabase
           .from('bookings')
           .select('id, status, space_title')
           .eq('payment_intent', sessionId)
@@ -49,7 +43,7 @@ const ReservationSuccess = () => {
         
         if (bookingData && bookingData.length > 0) {
           console.log("Found booking by payment_intent:", bookingData[0].id);
-          const booking = bookingData[0];
+          const booking = bookingData[0] as BookingDetails;
           
           const { error: updateError } = await supabase
             .from('bookings')
@@ -75,7 +69,7 @@ const ReservationSuccess = () => {
         } 
         else {
           console.log("No booking found by payment_intent, looking for recent pending bookings");
-          const { data: pendingBookings, error: pendingError }: BookingQueryResult = await supabase
+          const { data: pendingBookings, error: pendingError } = await supabase
             .from('bookings')
             .select('id, status, space_title')
             .eq('payment_status', 'pending')
@@ -89,7 +83,7 @@ const ReservationSuccess = () => {
           
           if (pendingBookings && pendingBookings.length > 0) {
             console.log("Found recent pending booking:", pendingBookings[0].id);
-            const booking = pendingBookings[0];
+            const booking = pendingBookings[0] as BookingDetails;
             
             const { error: updateError } = await supabase
               .from('bookings')
