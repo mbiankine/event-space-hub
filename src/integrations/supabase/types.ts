@@ -92,6 +92,64 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          booking_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          receiver_id: string
+          sender_id: string
+          space_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          receiver_id: string
+          sender_id: string
+          space_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          receiver_id?: string
+          sender_id?: string
+          space_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "active_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -238,7 +296,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_bookings: {
+        Row: {
+          additional_services_price: number | null
+          booking_date: string | null
+          client_email: string | null
+          client_id: string | null
+          client_name: string | null
+          client_phone: string | null
+          created_at: string | null
+          end_time: string | null
+          event_type: string | null
+          guest_count: number | null
+          host_id: string | null
+          id: string | null
+          images: string[] | null
+          location: Json | null
+          notes: string | null
+          payment_status: string | null
+          service_fee: number | null
+          space_id: string | null
+          space_price: number | null
+          space_title: string | null
+          start_time: string | null
+          status: string | null
+          title: string | null
+          total_price: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {

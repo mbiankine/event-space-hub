@@ -13,6 +13,8 @@ import Analytics from '@/pages/host/Analytics';
 import Settings from '@/pages/host/Settings';
 import HostDashboard from '@/pages/host/Dashboard';
 import ClientDashboard from '@/pages/client/Dashboard';
+import ClientBookingDetails from '@/pages/client/BookingDetails';
+import ClientMessages from '@/pages/client/Messages';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import StripeConfig from '@/pages/admin/StripeConfig';
 import Index from '@/pages/Index';
@@ -50,6 +52,14 @@ function App() {
             <Route 
               path="/client/dashboard" 
               element={<ProtectedRoute requiredRole="client"><ClientDashboard /></ProtectedRoute>} 
+            />
+            <Route 
+              path="/client/bookings/:id" 
+              element={<ProtectedRoute requiredRole="client"><ClientBookingDetails /></ProtectedRoute>} 
+            />
+            <Route 
+              path="/client/messages/:contactId" 
+              element={<ProtectedRoute requiredRole="client"><ClientMessages /></ProtectedRoute>} 
             />
             
             {/* Protected host routes */}

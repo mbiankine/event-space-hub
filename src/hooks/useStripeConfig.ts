@@ -2,18 +2,27 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
+import { useAuth } from '@/contexts/auth/AuthContext';
 
 export function useStripeConfig() {
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   async function startStripeCheckout(spaceId: string, price: number, days?: number) {
     try {
       setIsLoading(true);
       
+      if (!user) {
+        toast.error('Você precisa estar logado para continuar');
+        return false;
+      }
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { 
           space_id: spaceId, 
-          price, 
+          price,
+          user_id: user.id,
+          user_email: user.email,
           days 
         }
       });
