@@ -57,6 +57,7 @@ const spaceFormSchema = z.object({
     })
   ).optional(),
   availability: z.array(z.date()),
+  // Update the type of images to accept either an array of Files or an array of strings
   images: z.array(z.any()).optional(),
 });
 
@@ -95,8 +96,16 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     },
   });
 
+  // Update the function to explicitly handle the mixed array type
   const handleImageUpload = (images: File[]) => {
-    form.setValue("images", images);
+    // Create a properly typed array
+    const currentImages = form.getValues("images") || [];
+    
+    // Remove any previous File objects if we're adding new ones
+    const stringImages = currentImages.filter(img => typeof img === 'string') as string[];
+    
+    // Set the new array with both string URLs and File objects
+    form.setValue("images", [...stringImages, ...images]);
   };
 
   const handleSubmit = async (values: SpaceFormValues) => {

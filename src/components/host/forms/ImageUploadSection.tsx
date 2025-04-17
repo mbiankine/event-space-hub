@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { FormSection } from './FormSection';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ImageUploadSectionProps {
   onChange: (images: File[]) => void;
-  initialImages?: File[] | string[];
+  initialImages?: Array<string | File>;
 }
 
 export function ImageUploadSection({ onChange, initialImages = [] }: ImageUploadSectionProps) {
-  const [uploadedImages, setUploadedImages] = useState<(File | string)[]>(initialImages || []);
+  const [uploadedImages, setUploadedImages] = useState<Array<string | File>>(initialImages || []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -18,7 +18,7 @@ export function ImageUploadSection({ onChange, initialImages = [] }: ImageUpload
       setUploadedImages(updatedImages);
       
       // Only pass File objects to onChange
-      const fileObjects = updatedImages.filter(img => img instanceof File) as File[];
+      const fileObjects = newFiles as File[];
       onChange(fileObjects);
     }
   };
@@ -27,7 +27,8 @@ export function ImageUploadSection({ onChange, initialImages = [] }: ImageUpload
     const updatedImages = uploadedImages.filter((_, i) => i !== index);
     setUploadedImages(updatedImages);
     
-    // Only pass File objects to onChange
+    // Only pass File objects to onChange - this means if user removes an image,
+    // we need to extract all remaining File objects and pass them
     const fileObjects = updatedImages.filter(img => img instanceof File) as File[];
     onChange(fileObjects);
   };
@@ -42,8 +43,11 @@ export function ImageUploadSection({ onChange, initialImages = [] }: ImageUpload
       if (image.startsWith('http')) {
         imageUrl = image;
       } else {
-        // If it's a storage path, we could construct the URL, but for now just show placeholder
-        imageUrl = '/placeholder.svg';
+        // If it's a storage path, construct the URL using Supabase
+        const { publicUrl } = supabase.storage
+          .from('spaces')
+          .getPublicUrl(image);
+        imageUrl = publicUrl;
       }
     } else {
       // Fallback for any other cases

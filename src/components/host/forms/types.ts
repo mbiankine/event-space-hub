@@ -23,5 +23,6 @@ export interface SpaceFormValues {
   customAmenities: string[];
   pricedAmenities?: CustomAmenity[];
   availability: Date[];
-  images: (File | string)[];
+  // Updated type to handle both string URLs and File objects in the same array
+  images: Array<string | File>;
 }

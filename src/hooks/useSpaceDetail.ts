@@ -16,21 +16,26 @@ export const useSpaceDetail = (id: string | undefined) => {
       
       setIsLoading(true);
       try {
+        // Remove 'custom_amenities' from the select statement as it doesn't exist as a column
         const { data, error } = await supabase
           .from('spaces')
-          .select('*, custom_amenities')
+          .select('*')
           .eq('id', id)
           .single();
           
         if (error) throw error;
         setSpace(data);
         
-        if (data.availability && data.availability.length > 0) {
+        // Only process availability if data exists and has availability property
+        if (data && data.availability && data.availability.length > 0) {
           const availableDatesArray = data.availability.map((dateStr: string) => new Date(dateStr));
           setAvailableDates(availableDatesArray);
         }
         
-        await loadBookings(data.id);
+        // Only load bookings if we successfully got the space data
+        if (data && data.id) {
+          await loadBookings(data.id);
+        }
       } catch (error) {
         console.error('Error fetching space:', error);
         navigate('/');
