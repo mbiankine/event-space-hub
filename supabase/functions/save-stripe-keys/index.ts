@@ -18,6 +18,10 @@ serve(async (req) => {
     // Parse request body
     const { testApiKey, prodApiKey, mode, webhookSecret } = await req.json();
 
+    // Log received data (without exposing full keys)
+    console.log(`Stripe keys received for mode: ${mode}`);
+    console.log(`Test key begins with: ${testApiKey ? testApiKey.substring(0, 7) + '...' : 'none'}`);
+    
     if (!testApiKey) {
       throw new Error("Test API key is required");
     }
@@ -50,7 +54,7 @@ serve(async (req) => {
         const prodResult = await prodStripe.balance.retrieve();
         console.log("Production API key validated successfully");
       }
-    } catch (stripeError) {
+    } catch (stripeError: any) {
       console.error("Stripe key validation failed:", stripeError.message);
       
       // Provide more detailed error messages based on the Stripe error
@@ -118,7 +122,7 @@ serve(async (req) => {
     const { data: existingConfig, error: fetchError } = await supabaseAdmin
       .from('stripe_config')
       .select('*')
-      .single();
+      .maybeSingle();
       
     if (fetchError && !fetchError.message.includes('No rows found')) {
       console.error("Error fetching config:", fetchError);
@@ -173,7 +177,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in save-stripe-keys:", error.message);
     console.error("Error details:", error.stack || "No stack trace");
     

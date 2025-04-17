@@ -13,6 +13,18 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 
+interface StripeConfig {
+  id: string;
+  test_key: string;
+  prod_key: string | null;
+  webhook_secret: string | null;
+  mode: 'test' | 'production';
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+}
+
 const StripeConfig = () => {
   const navigate = useNavigate();
   const { hasRole, user, isLoading: authLoading } = useAuth();
@@ -47,7 +59,7 @@ const StripeConfig = () => {
         
         if (data) {
           // Mask API keys for display (only showing last 4 characters)
-          const maskKey = (key) => key ? `${key.substring(0, 7)}${'•'.repeat(key.length - 11)}${key.substring(key.length - 4)}` : '';
+          const maskKey = (key: string | null) => key ? `${key.substring(0, 7)}${'•'.repeat(key.length - 11)}${key.substring(key.length - 4)}` : '';
           
           setTestApiKey(data.test_key || '');
           setProdApiKey(data.prod_key || '');
@@ -57,7 +69,7 @@ const StripeConfig = () => {
           
           toast.success("Configuração do Stripe carregada com sucesso", { id: "stripe-config-loaded" });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error in fetchStripeConfig:", error);
       } finally {
         setIsLoadingConfig(false);
@@ -142,7 +154,7 @@ const StripeConfig = () => {
       
       setStripeConnected(true);
       toast.success("Configurações do Stripe salvas com sucesso!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving Stripe keys:", error);
       setStripeConnected(false);
       
@@ -156,7 +168,7 @@ const StripeConfig = () => {
     }
   };
 
-  const handleToggleMode = (value) => {
+  const handleToggleMode = (value: boolean) => {
     setIsProduction(value);
   };
 

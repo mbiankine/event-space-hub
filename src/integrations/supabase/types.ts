@@ -176,6 +176,42 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_config: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          mode: string
+          prod_key: string | null
+          test_key: string
+          updated_at: string
+          updated_by: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mode?: string
+          prod_key?: string | null
+          test_key: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          mode?: string
+          prod_key?: string | null
+          test_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
