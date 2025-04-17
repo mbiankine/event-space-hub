@@ -15,6 +15,21 @@ import { Booking } from '@/types/BookingTypes';
 import { Space } from '@/types/SpaceTypes';
 import { ArrowLeft, Clock, Users } from 'lucide-react';
 
+// Add global CSS styles for the booking indicator
+const bookingIndicatorStyle = `
+  .booking-indicator::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: currentColor;
+  }
+`;
+
 const SpaceCalendar = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -24,6 +39,17 @@ const SpaceCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedDateBookings, setSelectedDateBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Add style element to head when component mounts
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = bookingIndicatorStyle;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -161,19 +187,6 @@ const SpaceCalendar = () => {
                     },
                   }}
                 />
-                <style jsx>{`
-                  .booking-indicator::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    width: 4px;
-                    height: 4px;
-                    border-radius: 50%;
-                    background-color: currentColor;
-                  }
-                `}</style>
               </CardContent>
             </Card>
           </div>
