@@ -7,11 +7,15 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, MessageSquare, CalendarIcon, Clock, Users, Banknote } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { ChevronLeft, MessageSquare } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { Booking } from "@/types/BookingTypes";
+import BookingMainInfo from "@/components/host/booking/BookingMainInfo";
+import BookingStatusActions from "@/components/host/booking/BookingStatusActions";
+import BookingClientInfo from "@/components/host/booking/BookingClientInfo";
+import BookingSpaceInfo from "@/components/host/booking/BookingSpaceInfo";
 
 const BookingDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +31,6 @@ const BookingDetail = () => {
 
       setIsLoading(true);
       try {
-        // Fetch booking details
         const { data: bookingData, error: bookingError } = await supabase
           .from('bookings')
           .select('*')
@@ -35,16 +38,13 @@ const BookingDetail = () => {
           .eq('host_id', user.id)
           .single();
 
-        if (bookingError) {
-          throw bookingError;
-        }
+        if (bookingError) throw bookingError;
 
         if (!bookingData) {
           toast.error('Reserva não encontrada');
           return;
         }
 
-        // Ensure payment_method has a default value if it's missing
         const completeBookingData = {
           ...bookingData,
           payment_method: bookingData.payment_method || 'card'
@@ -52,7 +52,6 @@ const BookingDetail = () => {
 
         setBooking(completeBookingData);
 
-        // Fetch space details if space_id exists
         if (bookingData.space_id) {
           const { data: spaceData, error: spaceError } = await supabase
             .from('spaces')
@@ -67,7 +66,6 @@ const BookingDetail = () => {
           }
         }
 
-        // Fetch client details if client_id exists
         if (bookingData.client_id) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -93,28 +91,7 @@ const BookingDetail = () => {
     fetchBookingDetails();
   }, [id, user]);
 
-  const handleUpdateStatus = async (newStatus: string) => {
-    if (!booking || !user) return;
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: newStatus })
-        .eq('id', booking.id)
-        .eq('host_id', user.id);
-
-      if (error) throw error;
-
-      setBooking({ ...booking, status: newStatus });
-      toast.success(`Reserva ${newStatus === 'confirmed' ? 'confirmada' : 'atualizada'} com sucesso`);
-    } catch (error) {
-      console.error('Error updating booking status:', error);
-      toast.error('Erro ao atualizar status da reserva');
-    }
-  };
-
-  // Format date function to replace date-fns
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return "Não definido";
     
     const options: Intl.DateTimeFormatOptions = { 
@@ -152,18 +129,7 @@ const BookingDetail = () => {
         <Header />
         <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8 flex items-center justify-center">
           <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Reserva não encontrada</CardTitle>
-              <CardDescription>A reserva solicitada não existe ou você não tem permissão para acessá-la.</CardDescription>
-            </CardHeader>
-            <CardFooter>
-              <Button asChild>
-                <Link to="/host/bookings">
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Voltar para reservas
-                </Link>
-              </Button>
-            </CardFooter>
+            <BookingMainInfo booking={booking} formatDate={formatDate} />
           </Card>
         </main>
         <Footer />
@@ -205,146 +171,20 @@ const BookingDetail = () => {
               </SheetContent>
             </Sheet>
 
-            {booking.status === 'pending' && (
-              <Button variant="default" onClick={() => handleUpdateStatus('confirmed')}>
-                Confirmar Reserva
-              </Button>
-            )}
-
-            {booking.status === 'confirmed' && (
-              <Button variant="default" onClick={() => handleUpdateStatus('completed')}>
-                Marcar como Concluída
-              </Button>
-            )}
-
-            {(booking.status === 'pending' || booking.status === 'confirmed') && (
-              <Button variant="destructive" onClick={() => handleUpdateStatus('cancelled')}>
-                Cancelar
-              </Button>
-            )}
+            <BookingStatusActions 
+              booking={booking} 
+              user={user} 
+              onStatusUpdate={(newStatus) => setBooking({ ...booking, status: newStatus })}
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Booking info card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações da Reserva</CardTitle>
-              <CardDescription>Detalhes desta reserva</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <CalendarIcon className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Data</p>
-                  <p className="font-medium">{formatDate(booking.booking_date)}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <Clock className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Horário</p>
-                  <p className="font-medium">{booking.start_time || "--:--"} - {booking.end_time || "--:--"}</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <Users className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Convidados</p>
-                  <p className="font-medium">{booking.guest_count || 0} pessoas</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <Banknote className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="font-medium">R$ {booking.total_price?.toFixed(2) || "0,00"}</p>
-                </div>
-              </div>
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-1">Status</p>
-                <div className={`px-3 py-1 rounded-md text-center
-                  ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    booking.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'}`}
-                >
-                  {booking.status === 'confirmed' ? 'Confirmada' :
-                    booking.status === 'pending' ? 'Pendente' :
-                    booking.status === 'completed' ? 'Concluída' :
-                    booking.status === 'cancelled' ? 'Cancelada' :
-                    'Status desconhecido'}
-                </div>
-              </div>
-              {booking.event_type && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-1">Tipo de evento</p>
-                  <p>{booking.event_type}</p>
-                </div>
-              )}
-              {booking.notes && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-1">Observações</p>
-                  <p>{booking.notes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <BookingMainInfo booking={booking} formatDate={formatDate} />
 
-          {/* Client and Space Info */}
           <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Informações do Cliente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <p className="text-lg font-semibold">{booking.client_name || "Nome do Cliente"}</p>
-                {booking.client_email && <p className="text-muted-foreground">{booking.client_email}</p>}
-                {booking.client_phone && <p className="text-muted-foreground">{booking.client_phone}</p>}
-              </div>
-              
-              {client && client.bio && (
-                <div className="mb-6 bg-muted/30 p-4 rounded-md">
-                  <p className="text-sm text-muted-foreground mb-1">Sobre o cliente</p>
-                  <p>{client.bio}</p>
-                </div>
-              )}
-            </CardContent>
-            
-            {space && (
-              <>
-                <CardHeader className="border-t pt-6">
-                  <CardTitle>Informações do Espaço</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-semibold">{space.title}</p>
-                  <p className="text-muted-foreground line-clamp-2 mb-4">{space.description}</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Capacidade</p>
-                      <p className="font-medium">{space.capacity} pessoas</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Tipo</p>
-                      <p className="font-medium">{space.space_type}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Valor</p>
-                      <p className="font-medium">R$ {space.price}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </>
-            )}
+            <BookingClientInfo client={client} booking={booking} />
+            <BookingSpaceInfo space={space} />
           </Card>
         </div>
       </main>
