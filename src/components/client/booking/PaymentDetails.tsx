@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PaymentDetailsProps {
   booking: {
@@ -21,6 +23,8 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
   const [updatedBooking, setUpdatedBooking] = useState(booking);
 
   useEffect(() => {
+    console.log('Setting up booking status updates for booking:', booking.id);
+    
     // Set up real-time subscription for booking updates
     const channel = supabase
       .channel('booking-updates')
@@ -30,17 +34,45 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
         table: 'bookings',
         filter: `id=eq.${booking.id}`
       }, (payload) => {
-        console.log('Booking updated:', payload);
-        setUpdatedBooking({
-          ...updatedBooking,
+        console.log('Realtime booking update received:', payload);
+        setUpdatedBooking(prevState => ({
+          ...prevState,
           payment_status: payload.new.payment_status,
           status: payload.new.status,
           payment_method: payload.new.payment_method
-        });
+        }));
+        
+        if (payload.new.payment_status === 'paid') {
+          toast.success('Pagamento confirmado com sucesso!');
+        }
       })
       .subscribe();
 
-    // Set up polling every minute
+    // Initial fetch to ensure we have the latest data
+    const fetchLatestBookingData = async () => {
+      console.log('Fetching latest booking data...');
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', booking.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        console.log('Initial fetch result:', data);
+        setUpdatedBooking(prevState => ({
+          ...prevState,
+          payment_status: data.payment_status,
+          status: data.status,
+          payment_method: data.payment_method
+        }));
+      } else if (error) {
+        console.error('Error fetching booking:', error);
+      }
+    };
+    
+    fetchLatestBookingData();
+
+    // Set up polling every minute as a backup
     const pollInterval = setInterval(async () => {
       console.log('Polling booking status...');
       const { data, error } = await supabase
@@ -50,22 +82,28 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
         .maybeSingle();
 
       if (!error && data) {
-        console.log('Polling update:', data);
-        setUpdatedBooking({
-          ...updatedBooking,
+        console.log('Polling update result:', data);
+        setUpdatedBooking(prevState => ({
+          ...prevState,
           payment_status: data.payment_status,
           status: data.status,
           payment_method: data.payment_method
-        });
+        }));
       }
     }, 60000); // 1 minute interval
 
     // Cleanup subscriptions and intervals
     return () => {
+      console.log('Cleaning up booking status update subscriptions');
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
     };
   }, [booking.id]);
+
+  // Update the local state when the prop changes
+  useEffect(() => {
+    setUpdatedBooking(booking);
+  }, [booking]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

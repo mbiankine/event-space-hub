@@ -9,6 +9,7 @@ import { useBookingDetails } from '@/hooks/useBookingDetails';
 import BookingLayout from '@/components/client/booking/BookingLayout';
 import BookingContent from '@/components/client/booking/BookingContent';
 import BookingNotFound from '@/components/client/booking/BookingNotFound';
+import { toast } from 'sonner';
 
 const BookingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,9 @@ const BookingDetails = () => {
       await startStripeCheckout(booking.space_id, price, days, booking.id);
     } catch (error: any) {
       console.error('Payment error:', error);
+      toast.error('Erro ao processar pagamento', {
+        description: error.message || 'Tente novamente mais tarde'
+      });
     }
   };
   
