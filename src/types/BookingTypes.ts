@@ -22,4 +22,5 @@ export interface Booking {
   total_price: number | null;
   created_at: string | null;
   updated_at: string | null;
+  payment_method?: string; // Added this field as optional
 }

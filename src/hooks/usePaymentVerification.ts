@@ -29,7 +29,7 @@ export function usePaymentVerification(sessionId: string | null) {
         // First, check if we already have a booking with this payment_intent
         const { data: existingBooking, error: existingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title, client_id, payment_status, payment_method')
+          .select('id, status, space_title, client_id, payment_status')
           .eq('payment_intent', sessionId)
           .maybeSingle();
         
@@ -63,7 +63,7 @@ export function usePaymentVerification(sessionId: string | null) {
             id: existingBooking.id,
             status: existingBooking.status,
             space_title: existingBooking.space_title,
-            payment_method: existingBooking.payment_method
+            payment_method: 'card' // Default to card since payment_method doesn't exist in the table
           });
           return;
         }
@@ -81,7 +81,7 @@ export function usePaymentVerification(sessionId: string | null) {
         // Look for the most recent pending booking for this user
         const { data: pendingBookings, error: pendingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title, payment_intent, client_id, payment_method')
+          .select('id, status, space_title, payment_intent, client_id')
           .eq('payment_status', 'pending')
           .eq('client_id', user?.id)
           .is('payment_intent', null)
@@ -95,7 +95,7 @@ export function usePaymentVerification(sessionId: string | null) {
         
         if (pendingBookings && pendingBookings.length > 0) {
           console.log("Found recent pending booking:", pendingBookings[0].id);
-          const booking = pendingBookings[0] as BookingDetails;
+          const booking = pendingBookings[0];
           
           const { error: updateError } = await supabase
             .from('bookings')
@@ -103,7 +103,6 @@ export function usePaymentVerification(sessionId: string | null) {
               payment_status: 'paid',
               status: 'confirmed', // Always set status to confirmed when payment is successful
               payment_intent: sessionId,
-              payment_method: 'card', // Default payment method
               updated_at: new Date().toISOString()
             })
             .eq('id', booking.id);
@@ -117,7 +116,7 @@ export function usePaymentVerification(sessionId: string | null) {
             id: booking.id,
             status: 'confirmed',
             space_title: booking.space_title,
-            payment_method: 'card'
+            payment_method: 'card' // Default to card since payment_method doesn't exist in table
           });
           
           toast.success('Pagamento confirmado com sucesso!');
@@ -126,7 +125,7 @@ export function usePaymentVerification(sessionId: string | null) {
           setBookingDetails({
             id: sessionId.substring(0, 8),
             status: 'confirmed',
-            payment_method: 'card'
+            payment_method: 'card' // Default value
           });
         }
       } catch (error: any) {
