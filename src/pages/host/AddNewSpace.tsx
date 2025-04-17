@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from "@/components/Header";
@@ -54,7 +53,7 @@ const AddNewSpace = () => {
         hourlyPrice = parseFloat(values.hourlyPrice?.toString() || '0') || 0;
       }
 
-      // Prepare space data with pricing options
+      // Prepare space data
       const spaceToInsert = {
         title: values.title,
         description: values.description,
@@ -66,73 +65,55 @@ const AddNewSpace = () => {
         availability: (values.availability || []).map((date: Date) => date.toISOString().split('T')[0]),
         pricing_type: values.pricingType,
         price: price,
-        hourly_price: hourlyPrice
+        hourly_price: hourlyPrice,
+        active: true,
+        created_at: new Date().toISOString()
       };
-      
-      console.log("Sending to Supabase:", spaceToInsert);
 
-      // 1. First upload the space data
+      // First upload the space data
       const { data: insertedSpaceData, error: spaceError } = await supabase
         .from('spaces')
         .insert(spaceToInsert)
         .select()
         .single();
 
-      if (spaceError) {
-        console.error("Supabase insert error:", spaceError);
-        throw new Error(`Erro ao salvar espaço: ${spaceError.message}`);
-      }
+      if (spaceError) throw spaceError;
       
       console.log("Space created successfully:", insertedSpaceData);
       
-      // 2. Upload images if there are any
-      if (values.images && values.images.length > 0) {
+      // Upload images if there are any
+      if (values.images?.length > 0) {
         const uploadPromises = values.images.map(async (file: File, index: number) => {
           const fileExt = file.name.split('.').pop();
           const fileName = `${insertedSpaceData.id}/${index}-${Date.now()}.${fileExt}`;
-          const filePath = `${fileName}`;
           
-          console.log(`Uploading image ${index} to ${filePath}`);
-          
-          const { error: uploadError, data } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('spaces')
-            .upload(filePath, file);
+            .upload(fileName, file);
 
-          if (uploadError) {
-            console.error(`Error uploading image ${index}:`, uploadError);
-            throw new Error(`Erro ao enviar imagem ${index+1}: ${uploadError.message}`);
-          }
+          if (uploadError) throw uploadError;
           
-          return filePath;
+          return fileName;
         });
         
-        try {
-          const uploadedPaths = await Promise.all(uploadPromises);
-          console.log("Uploaded image paths:", uploadedPaths);
+        const uploadedPaths = await Promise.all(uploadPromises);
+        
+        // Update space with image paths
+        const { error: updateError } = await supabase
+          .from('spaces')
+          .update({ images: uploadedPaths })
+          .eq('id', insertedSpaceData.id);
           
-          // 3. Update the space with image paths
-          const { error: updateError } = await supabase
-            .from('spaces')
-            .update({
-              images: uploadedPaths
-            })
-            .eq('id', insertedSpaceData.id);
-            
-          if (updateError) {
-            console.error("Error updating space with images:", updateError);
-            throw new Error(`Erro ao atualizar espaço com imagens: ${updateError.message}`);
-          }
-        } catch (uploadError: any) {
-          console.error("Error during image upload:", uploadError);
-          toast.error(uploadError.message || "Erro ao enviar as imagens");
-        }
+        if (updateError) throw updateError;
       }
       
       toast.success("Seu espaço foi publicado com sucesso!");
-      // Redirect to spaces page after a brief delay to show the toast
+      
+      // Redirect after success
       setTimeout(() => {
         navigate('/host/spaces');
       }, 1500);
+      
     } catch (error: any) {
       console.error('Error publishing space:', error);
       toast.error(error.message || "Erro ao publicar o espaço");

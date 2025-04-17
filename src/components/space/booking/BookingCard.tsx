@@ -1,19 +1,19 @@
 
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Users } from 'lucide-react';
+import { 
+  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { BookingTypeSection } from './BookingTypeSection';
+import { BookingDateSection } from './BookingDateSection';
+import { BookingPriceSection } from './BookingPriceSection';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookingTypeSelector } from './BookingTypeSelector';
-import { BookingDateSelector } from './BookingDateSelector';
-import { GuestCounter } from './GuestCounter';
-import { DurationSelector } from './DurationSelector';
-import { BookingPriceSummary } from './BookingPriceSummary';
-import { BookingErrorDialog } from './BookingErrorDialog';
-import { Space } from '@/types/SpaceTypes';
-import { addDays } from 'date-fns';
+import { toast } from 'sonner';
 
 interface BookingCardProps {
-  space: Space;
+  space: any;
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
   guests: number;
@@ -46,30 +46,19 @@ export function BookingCard({
   unavailableDates
 }: BookingCardProps) {
   const { user, isLoading: authLoading } = useAuth();
-  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
-  const [paymentError, setPaymentError] = React.useState<string | null>(null);
-  const [isErrorDialogOpen, setIsErrorDialogOpen] = React.useState(false);
-  const [selectedDateRange, setSelectedDateRange] = React.useState<Date[]>([]);
-  
-  // Calculate the minimum allowed date (2 days from now)
-  const minDate = addDays(new Date(), 2);
-  
-  // Reset days when switching booking types
-  React.useEffect(() => {
-    if (bookingType === 'hourly') {
-      setSelectedDays(1);
-    }
-  }, [bookingType, setSelectedDays]);
-  
-  // Update date range when date changes
-  React.useEffect(() => {
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
+  const [selectedDateRange, setSelectedDateRange] = useState<Date[]>([]);
+
+  useEffect(() => {
     if (date && bookingType === 'daily' && selectedDays > 1) {
       calculatePossibleDateRange(date);
     } else {
       setSelectedDateRange(date ? [date] : []);
     }
   }, [date, selectedDays, bookingType, unavailableDates]);
-  
+
   const calculatePossibleDateRange = (startDate: Date) => {
     if (!startDate) return;
     
@@ -87,21 +76,26 @@ export function BookingCard({
       } else {
         canAddMore = false;
         setSelectedDays(range.length);
+        toast.info(`Só é possível reservar ${range.length} dia(s) consecutivos devido a indisponibilidade de datas.`);
       }
     }
     
     setSelectedDateRange(range);
   };
-  
-  // Calculate total price based on booking type and duration
-  const totalPrice = bookingType === 'hourly' ? 
-    (space.hourly_price || 0) * selectedHours : 
-    space.price * selectedDays;
+
+  const calculatePrice = () => {
+    if (bookingType === 'hourly' && space.hourly_price) {
+      return space.hourly_price * selectedHours;
+    } else if (bookingType === 'daily') {
+      return space.price * selectedDays;
+    }
+    return space.price;
+  };
 
   const handleReserveClick = async () => {
     if (!user) {
-      handleBookNow();
-      return;
+      const result = await handleBookNow();
+      return result;
     }
 
     try {
@@ -109,17 +103,53 @@ export function BookingCard({
       setPaymentError(null);
 
       const bookingResult = await handleBookNow();
-      if (!bookingResult || !bookingResult.success) {
+      if (!bookingResult.success) {
         throw new Error('Falha ao criar reserva');
       }
       
+      return bookingResult;
     } catch (error: any) {
       console.error('Booking error:', error);
       setPaymentError(error.message || 'Erro ao processar a reserva. Por favor, tente novamente.');
       setIsErrorDialogOpen(true);
+      return { success: false };
     } finally {
       setIsProcessingPayment(false);
     }
+  };
+
+  const handleGuestsChange = (increment: boolean) => {
+    const newValue = increment 
+      ? Math.min(space.capacity, guests + 25)
+      : Math.max(1, guests - 25);
+    setGuests(newValue);
+  };
+
+  const handleHoursChange = (increment: boolean) => {
+    const newValue = increment
+      ? Math.min(24, selectedHours + 1)
+      : Math.max(1, selectedHours - 1);
+    setSelectedHours(newValue);
+  };
+
+  const handleDaysChange = (increment: boolean) => {
+    if (!increment && selectedDays <= 1) return;
+    
+    const newValue = increment
+      ? Math.min(30, selectedDays + 1)
+      : Math.max(1, selectedDays - 1);
+    
+    if (increment && date) {
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + selectedDays);
+      if (!isDateAvailable(nextDate)) {
+        toast.info("Não é possível adicionar mais dias consecutivos devido à indisponibilidade de datas.");
+        return;
+      }
+    }
+    
+    setSelectedDays(newValue);
+    if (date) calculatePossibleDateRange(date);
   };
 
   return (
@@ -138,45 +168,100 @@ export function BookingCard({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <BookingTypeSelector
+          <BookingTypeSection
             bookingType={bookingType}
             setBookingType={setBookingType}
             pricingType={space.pricing_type}
           />
           
-          <BookingDateSelector
+          <BookingDateSection
             date={date}
             setDate={setDate}
             isDateAvailable={isDateAvailable}
             selectedDateRange={selectedDateRange}
             selectedDays={selectedDays}
-            setSelectedDays={setSelectedDays}
             bookingType={bookingType}
           />
           
-          <GuestCounter
-            guests={guests}
-            setGuests={setGuests}
-            maxCapacity={space.capacity}
-          />
+          <div className="mb-4">
+            <h4 className="font-medium mb-2">Convidados</h4>
+            <div className="flex items-center justify-between border rounded-md p-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                <span>Convidados</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => handleGuestsChange(false)}
+                  disabled={guests <= 1}
+                >
+                  -
+                </Button>
+                <span className="w-8 text-center">{guests}</span>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => handleGuestsChange(true)}
+                  disabled={guests >= space.capacity}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+          </div>
           
-          <DurationSelector
+          <div className="mb-4">
+            <h4 className="font-medium mb-2">
+              {bookingType === 'hourly' ? 'Duração em horas' : 'Duração em dias'}
+            </h4>
+            <div className="flex items-center justify-between border rounded-md p-3">
+              <div className="flex items-center gap-2">
+                <span>{bookingType === 'hourly' ? 'Horas' : 'Dias'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => bookingType === 'hourly' 
+                    ? handleHoursChange(false)
+                    : handleDaysChange(false)
+                  }
+                  disabled={bookingType === 'hourly' 
+                    ? selectedHours <= 1 
+                    : selectedDays <= 1
+                  }
+                >
+                  -
+                </Button>
+                <span className="w-8 text-center">
+                  {bookingType === 'hourly' ? selectedHours : selectedDays}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => bookingType === 'hourly'
+                    ? handleHoursChange(true)
+                    : handleDaysChange(true)
+                  }
+                  disabled={bookingType === 'hourly'
+                    ? selectedHours >= 24
+                    : selectedDays >= 30
+                  }
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          <BookingPriceSection
             bookingType={bookingType}
             selectedHours={selectedHours}
-            setSelectedHours={setSelectedHours}
             selectedDays={selectedDays}
-            setSelectedDays={setSelectedDays}
-            date={date}
-            isDateAvailable={isDateAvailable}
-          />
-          
-          <BookingPriceSummary
-            bookingType={bookingType}
-            price={space.price}
-            hourlyPrice={space.hourly_price}
-            selectedHours={selectedHours}
-            selectedDays={selectedDays}
-            totalPrice={totalPrice}
+            space={space}
+            calculatePrice={calculatePrice}
           />
         </CardContent>
         <CardFooter>
@@ -190,11 +275,17 @@ export function BookingCard({
         </CardFooter>
       </Card>
       
-      <BookingErrorDialog
-        isOpen={isErrorDialogOpen}
-        onOpenChange={setIsErrorDialogOpen}
-        error={paymentError}
-      />
+      <Dialog open={isErrorDialogOpen} onOpenChange={setIsErrorDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Erro no Processamento</DialogTitle>
+            <DialogDescription>{paymentError}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsErrorDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

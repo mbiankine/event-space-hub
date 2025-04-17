@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -62,15 +61,17 @@ const SpaceDetail = () => {
 
   const imageUrls = getImageUrls(space);
   
-  const handleBookingClick = () => {
+  const handleBookingClick = async () => {
     // Capture current booking state values when booking button is clicked
-    handleBookNow({
+    const result = await handleBookNow({
       date: bookingState.date,
       guests: bookingState.guests,
       selectedHours: bookingState.selectedHours,
       selectedDays: bookingState.selectedDays,
       bookingType: bookingState.bookingType
     });
+    
+    return result;
   };
   
   const bookingProps = {
