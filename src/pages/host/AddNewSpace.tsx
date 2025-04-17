@@ -90,6 +90,19 @@ const AddNewSpace = () => {
       
       // Upload images if there are any
       if (values.images?.length > 0) {
+        // Create spaces bucket if it doesn't exist
+        try {
+          const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('spaces');
+          if (bucketError && bucketError.message.includes('not found')) {
+            console.log('Creating spaces bucket');
+            await supabase.storage.createBucket('spaces', {
+              public: true,
+            });
+          }
+        } catch (error) {
+          console.log('Error with bucket check/creation, trying to continue:', error);
+        }
+        
         // Extract file objects - we'll only upload these
         const fileImages = values.images.filter(img => img instanceof File) as File[];
         // Extract string URLs/paths - these are already uploaded

@@ -118,19 +118,45 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
   });
 
   const [isValid, setIsValid] = useState(false);
+  const [imagesValidated, setImagesValidated] = useState(false);
 
   // Watch for form changes and check validity
   useEffect(() => {
     const subscription = form.watch(() => {
-      // Call validate to check form validity
+      // Log form state for debugging
+      const values = form.getValues();
+      console.log("Form values:", values);
+      console.log("Form errors:", form.formState.errors);
+      
+      // Validate the form
       form.trigger().then(isValid => {
-        console.log("Form validation status:", isValid, "Errors:", form.formState.errors);
         setIsValid(isValid);
+        console.log("Form is valid:", isValid);
       });
     });
     
     return () => subscription.unsubscribe();
   }, [form]);
+
+  // Special effect to monitor images field specifically
+  useEffect(() => {
+    const imagesSubscription = form.watch("images", []);
+    const currentImages = form.getValues("images") || [];
+    
+    console.log("Images changed:", currentImages);
+    console.log("Images length:", currentImages.length);
+    
+    if (currentImages.length > 0) {
+      setImagesValidated(true);
+      form.clearErrors("images");
+      console.log("Images are valid");
+    } else {
+      setImagesValidated(false);
+      console.log("No images or invalid");
+    }
+    
+    return () => imagesSubscription;
+  }, [form.watch("images")]);
 
   const handleImageUpload = (newImages: File[]) => {
     try {
@@ -143,12 +169,20 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
       // Combine string images with new file images
       const combinedImages = [...stringImages, ...newImages];
       
+      console.log("Updating form with images:", combinedImages.length);
+      
       // Update the form with combined images
       form.setValue("images", combinedImages, { shouldValidate: true });
+      
+      if (combinedImages.length > 0) {
+        setImagesValidated(true);
+        form.clearErrors("images");
+      }
       
       console.log("Updated images in form:", combinedImages.length);
     } catch (error) {
       console.error("Error handling image upload:", error);
+      toast.error("Erro ao processar imagens");
     }
   };
 
@@ -163,13 +197,16 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
   };
 
   const errorCount = Object.keys(form.formState.errors).length;
+
+  // This determines if the button should be enabled
+  const buttonShouldBeEnabled = isValid && !isSubmitting && imagesValidated;
   
   useEffect(() => {
-    if (errorCount > 0) {
-      console.log("Form errors:", form.formState.errors);
-    }
-  }, [form.formState.errors, errorCount]);
-
+    console.log("Button should be enabled:", buttonShouldBeEnabled);
+    console.log("isValid:", isValid);
+    console.log("imagesValidated:", imagesValidated);
+  }, [buttonShouldBeEnabled, isValid, imagesValidated]);
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-foreground">
@@ -201,7 +238,7 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
 
         <Button 
           type="submit" 
-          disabled={isSubmitting || !isValid} 
+          disabled={!buttonShouldBeEnabled}
           className="w-full"
         >
           {isSubmitting ? "Salvando..." : "Publicar Espaço"}
