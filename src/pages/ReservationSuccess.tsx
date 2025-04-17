@@ -29,7 +29,10 @@ const ReservationSuccess = () => {
         setIsLoading(true);
         
         console.log("Looking for booking with session ID:", sessionId);
-        const { data: bookingData, error: bookingError } = await supabase
+        const { data: bookingData, error: bookingError }: { 
+          data: Array<{ id: string; status: string; space_title?: string }> | null; 
+          error: any; 
+        } = await supabase
           .from('bookings')
           .select('id, status, space_title')
           .eq('payment_intent', sessionId)
@@ -68,7 +71,10 @@ const ReservationSuccess = () => {
         } 
         else {
           console.log("No booking found by payment_intent, looking for recent pending bookings");
-          const { data: pendingBookings, error: pendingError } = await supabase
+          const { data: pendingBookings, error: pendingError }: { 
+            data: Array<{ id: string; status: string; space_title?: string }> | null; 
+            error: any; 
+          } = await supabase
             .from('bookings')
             .select('id, status, space_title')
             .eq('payment_status', 'pending')
