@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) => {
-  const { user, accountType, isLoading } = useAuth();
+  const { user, accountType, roles, isLoading } = useAuth();
   
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Carregando...</div>;
@@ -19,16 +19,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
     return <Navigate to="/auth/login" replace />;
   }
 
-  if (requiredRole && accountType !== requiredRole) {
-    // Redirect based on their account type
-    if (accountType === 'client') {
-      return <Navigate to="/client/dashboard" replace />;
-    } else if (accountType === 'host') {
-      return <Navigate to="/host/dashboard" replace />;
-    } else if (accountType === 'admin') {
-      return <Navigate to="/admin/dashboard" replace />;
-    } else {
-      return <Navigate to="/" replace />;
+  if (requiredRole) {
+    // Anfitrião pode acessar as rotas de cliente
+    if (requiredRole === 'client' && roles.includes('host')) {
+      // Permitir acesso se o anfitrião tentar acessar a área do cliente
+      return <Outlet />;
+    } 
+    
+    // Verificar o papel do usuário normalmente
+    if (!roles.includes(requiredRole)) {
+      // Redirect based on their account type
+      if (accountType === 'client') {
+        return <Navigate to="/client/dashboard" replace />;
+      } else if (accountType === 'host') {
+        return <Navigate to="/host/dashboard" replace />;
+      } else if (accountType === 'admin') {
+        return <Navigate to="/admin/dashboard" replace />;
+      } else {
+        return <Navigate to="/" replace />;
+      }
     }
   }
 

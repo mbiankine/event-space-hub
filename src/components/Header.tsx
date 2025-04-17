@@ -12,7 +12,7 @@ import { Globe, Menu, User } from "lucide-react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 
 export function Header() {
-  const { user, profile, accountType, signOut } = useAuth();
+  const { user, profile, accountType, roles, signOut } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -60,13 +60,15 @@ export function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   
-                  {accountType === 'client' && (
+                  {/* Cliente pode ver apenas o painel de cliente */}
+                  {(accountType === 'client' || roles.includes('client') || roles.includes('host')) && (
                     <DropdownMenuItem onClick={() => navigate('/client/dashboard')}>
                       Painel de Cliente
                     </DropdownMenuItem>
                   )}
                   
-                  {accountType === 'host' && (
+                  {/* Anfitrião pode ver o painel de anfitrião E o de cliente */}
+                  {(accountType === 'host' || roles.includes('host')) && (
                     <>
                       <DropdownMenuItem onClick={() => navigate('/host/dashboard')}>
                         Painel de Anfitrião

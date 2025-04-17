@@ -22,6 +22,14 @@ export async function signIn(
     if (roleError) throw roleError;
     
     const userRoles = roleData.map(item => item.role);
+    
+    // Se o usuário é anfitrião, ele pode entrar como cliente também
+    if (accountType === 'client' && !userRoles.includes('client') && userRoles.includes('host')) {
+      console.log('Host accessing as client, allowing access');
+      return { success: true };
+    }
+    
+    // Se não for o caso acima, verificar se tem a role solicitada
     if (!userRoles.includes(accountType)) {
       // If the user doesn't have the requested account type, sign out and throw an error
       await supabase.auth.signOut();
