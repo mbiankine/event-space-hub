@@ -7,14 +7,13 @@ import { SpaceForm } from '@/components/host/SpaceForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { toast } from 'sonner';
-import { SpaceFormValues } from '@/components/host/forms/types';
 
 const AddNewSpace = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleSubmit = async (values: SpaceFormValues) => {
+  const handleSubmit = async (values: any) => {
     if (!user) {
       toast.error("Você precisa estar logado para publicar um espaço");
       return;
@@ -47,11 +46,11 @@ const AddNewSpace = () => {
       let hourlyPrice = null;
       
       if (values.pricingType === 'daily' || values.pricingType === 'both') {
-        price = parseFloat(values.price.toString()) || 0;
+        price = parseFloat(values.price) || 0;
       }
       
       if (values.pricingType === 'hourly' || values.pricingType === 'both') {
-        hourlyPrice = parseFloat(values.hourlyPrice?.toString() || '0') || 0;
+        hourlyPrice = parseFloat(values.hourlyPrice) || 0;
       }
 
       // Prepare space data with pricing options
@@ -59,7 +58,7 @@ const AddNewSpace = () => {
         title: values.title,
         description: values.description,
         location: locationData,
-        capacity: parseInt(values.capacity.toString()) || 0,
+        capacity: parseInt(values.capacity) || 0,
         space_type: values.spaceType,
         amenities: allAmenities,
         host_id: user.id,
@@ -153,10 +152,7 @@ const AddNewSpace = () => {
         </div>
 
         <div className="bg-card text-card-foreground rounded-lg shadow p-6">
-          <SpaceForm 
-            onSubmit={handleSubmit} 
-            isSubmitting={isSubmitting} 
-          />
+          <SpaceForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
         </div>
       </main>
       <Footer />

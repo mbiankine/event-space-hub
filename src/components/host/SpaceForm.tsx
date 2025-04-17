@@ -90,15 +90,9 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     form.setValue("images", images);
   };
 
-  const handleSubmitForm = (values: SpaceFormValues) => {
-    console.log("Form submitted with values:", values);
-    // Call the onSubmit prop directly with the values
-    onSubmit(values);
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-6 text-foreground">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-foreground">
         {/* Basic Information */}
         <BasicInfoSection control={form.control} />
         
