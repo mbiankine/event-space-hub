@@ -45,6 +45,7 @@ const BookingDetail = () => {
           return;
         }
 
+        // Ensure payment_method exists with a default value if it's not present
         const completeBookingData = {
           ...bookingData,
           payment_method: bookingData.payment_method || 'card'
@@ -128,8 +129,13 @@ const BookingDetail = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8 flex items-center justify-center">
-          <Card className="w-full max-w-md">
-            <BookingMainInfo booking={booking} formatDate={formatDate} />
+          <Card className="w-full max-w-md p-6">
+            <p className="text-center text-muted-foreground">Reserva não encontrada ou você não tem permissão para visualizá-la.</p>
+            <div className="mt-4 flex justify-center">
+              <Button asChild>
+                <Link to="/host/bookings">Voltar para reservas</Link>
+              </Button>
+            </div>
           </Card>
         </main>
         <Footer />
