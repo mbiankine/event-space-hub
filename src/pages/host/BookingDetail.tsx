@@ -42,11 +42,11 @@ const BookingDetail = () => {
           return;
         }
 
-        // Create a properly typed booking object
+        // Create a properly typed booking object that includes payment_method
         const tempBooking: Booking = {
           ...bookingData,
-          // Make sure payment_method is included even if it's undefined
-          payment_method: bookingData.payment_method
+          // Ensure payment_method is included 
+          payment_method: bookingData.payment_method || undefined
         };
 
         setBooking(tempBooking);
