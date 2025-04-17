@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -91,6 +90,18 @@ const ClientMessages = () => {
     fetchContextDetails();
   }, [bookingId, spaceId, user]);
   
+  // Function to get image URL for space
+  const getImageUrl = (imagePath: string | undefined) => {
+    if (!imagePath) return "https://images.unsplash.com/photo-1522770179533-24471fcdba45?w=800&auto=format&fit=crop";
+    
+    // If it's already a full URL, return it
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // Otherwise get from storage
+    const { data } = supabase.storage.from('spaces').getPublicUrl(imagePath);
+    return data.publicUrl;
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -136,9 +147,12 @@ const ClientMessages = () => {
                   <div className="space-y-4">
                     {spaceDetails.images && spaceDetails.images.length > 0 && (
                       <img 
-                        src={spaceDetails.images[0]}
+                        src={getImageUrl(spaceDetails.images[0])}
                         alt={spaceDetails.title}
                         className="w-full h-40 object-cover rounded"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1522770179533-24471fcdba45?w=800&auto=format&fit=crop";
+                        }}
                       />
                     )}
                     <div>

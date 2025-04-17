@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
@@ -144,14 +143,17 @@ const SpaceDetail = () => {
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('booking_date')
+        .select('booking_date, payment_status, status')
         .eq('space_id', spaceId)
         .or('status.eq.confirmed,payment_status.eq.paid');
       
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const dates = data.map(booking => new Date(booking.booking_date));
+        const dates = data
+          .filter(booking => booking.payment_status === 'paid' || booking.status === 'confirmed')
+          .map(booking => new Date(booking.booking_date));
+        
         setUnavailableDates(dates);
       }
     } catch (error) {
@@ -163,6 +165,8 @@ const SpaceDetail = () => {
     if (!space || !space.images) return [];
     
     return space.images.map((imagePath: string) => {
+      if (imagePath.startsWith('http')) return imagePath;
+      
       const { data } = supabase.storage
         .from('spaces')
         .getPublicUrl(imagePath);
@@ -171,6 +175,8 @@ const SpaceDetail = () => {
   };
   
   const isDateAvailable = (date: Date) => {
+    if (!date) return false;
+    
     const dateStr = format(date, 'yyyy-MM-dd');
     
     const isUnavailable = unavailableDates.some(unavailableDate => 
@@ -279,13 +285,15 @@ const SpaceDetail = () => {
       
       const totalPrice = basePrice;
       
+      const bookingDate = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+      
       const { data, error } = await supabase
         .from('bookings')
         .insert({
           space_id: space.id,
           client_id: user.id,
           host_id: space.host_id,
-          booking_date: format(values.date, 'yyyy-MM-dd'),
+          booking_date: bookingDate,
           start_time: '10:00',
           end_time: values.bookingType === 'hourly' ? 
             format(new Date(new Date().setHours(10 + values.hours, 0, 0, 0)), 'HH:mm') : 
@@ -425,6 +433,7 @@ const SpaceDetail = () => {
               setBookingType={setBookingType}
               isDateAvailable={isDateAvailable}
               handleBookNow={handleBookNow}
+              unavailableDates={unavailableDates}
             />
           </div>
         </div>

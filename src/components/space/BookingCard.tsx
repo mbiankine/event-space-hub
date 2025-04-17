@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { format, addHours, parse } from 'date-fns';
+import { format, addDays, isWithinInterval, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, Clock, Users } from 'lucide-react';
 import { 
@@ -30,6 +31,7 @@ interface BookingCardProps {
   setBookingType: (type: "hourly" | "daily") => void;
   isDateAvailable: (date: Date) => boolean;
   handleBookNow: () => Promise<{ success: boolean, bookingId?: string }>;
+  unavailableDates: Date[];
 }
 
 export function BookingCard({
@@ -45,7 +47,8 @@ export function BookingCard({
   bookingType,
   setBookingType,
   isDateAvailable,
-  handleBookNow
+  handleBookNow,
+  unavailableDates
 }: BookingCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,6 +59,52 @@ export function BookingCard({
   const [isStripeConfigMissing, setIsStripeConfigMissing] = useState(false);
   const { startStripeCheckout } = useStripeConfig();
   const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
+  const [selectedDateRange, setSelectedDateRange] = useState<Date[]>([]);
+  
+  // Reset days when switching booking types
+  useEffect(() => {
+    if (bookingType === 'hourly') {
+      setSelectedDays(1);
+    }
+  }, [bookingType, setSelectedDays]);
+  
+  // Update date range when date changes
+  useEffect(() => {
+    if (date && bookingType === 'daily' && selectedDays > 1) {
+      calculatePossibleDateRange(date);
+    } else {
+      setSelectedDateRange(date ? [date] : []);
+    }
+  }, [date, selectedDays, bookingType, unavailableDates]);
+  
+  // Calculate possible consecutive date range
+  const calculatePossibleDateRange = (startDate: Date) => {
+    if (!startDate) return;
+    
+    const range: Date[] = [startDate];
+    let canAddMore = true;
+    let currentDay = 1;
+    
+    // Try to add days until we reach selectedDays or hit an unavailable date
+    while (canAddMore && currentDay < selectedDays) {
+      const nextDate = addDays(startDate, currentDay);
+      
+      if (isDateAvailable(nextDate)) {
+        range.push(nextDate);
+        currentDay++;
+      } else {
+        // Found unavailable date, can't add more
+        canAddMore = false;
+        
+        // Update selectedDays to match what's actually available
+        setSelectedDays(range.length);
+        
+        toast.info(`Só é possível reservar ${range.length} dia(s) consecutivos devido a indisponibilidade de datas.`);
+      }
+    }
+    
+    setSelectedDateRange(range);
+  };
   
   const calculatePrice = () => {
     if (bookingType === 'hourly' && space.hourly_price) {
@@ -89,13 +138,38 @@ export function BookingCard({
   };
 
   const decreaseDays = () => {
+    if (selectedDays <= 1) return;
+    
     const newValue = Math.max(1, selectedDays - 1);
     setSelectedDays(newValue);
+    
+    // Recalculate date range with new day count
+    if (date) calculatePossibleDateRange(date);
   };
 
   const increaseDays = () => {
-    const newValue = Math.min(30, selectedDays + 1);
-    setSelectedDays(newValue);
+    if (bookingType !== 'daily') return;
+    
+    const newValue = selectedDays + 1;
+    
+    // Check if adding another day is possible with current date selection
+    if (date) {
+      const nextDate = addDays(date, selectedDays);
+      if (!isDateAvailable(nextDate)) {
+        toast.info("Não é possível adicionar mais dias consecutivos devido à indisponibilidade de datas.");
+        return;
+      }
+    }
+    
+    setSelectedDays(Math.min(30, newValue));
+    
+    // Recalculate date range with new day count
+    if (date) calculatePossibleDateRange(date);
+  };
+  
+  // Check if date is in our selected date range
+  const isInSelectedRange = (day: Date) => {
+    return selectedDateRange.some(selectedDate => isSameDay(day, selectedDate));
   };
 
   const handleReserveClick = async () => {
@@ -148,6 +222,22 @@ export function BookingCard({
     const result = await startStripeCheckout(space.id, price, days, confirmedBookingId);
     console.log(`Stripe checkout result: ${result ? 'Success' : 'Failed'}`);
   };
+  
+  // Text to show dates being reserved
+  const getDateRangeText = () => {
+    if (!date) return "Escolha uma data";
+    
+    if (bookingType === 'hourly' || selectedDays === 1) {
+      return format(date, "dd 'de' MMMM, yyyy", { locale: ptBR });
+    }
+    
+    if (selectedDateRange.length > 1) {
+      const lastDate = selectedDateRange[selectedDateRange.length - 1];
+      return `${format(date, "dd", { locale: ptBR })} - ${format(lastDate, "dd 'de' MMMM, yyyy", { locale: ptBR })}`;
+    }
+    
+    return format(date, "dd 'de' MMMM, yyyy", { locale: ptBR });
+  };
 
   return (
     <>
@@ -199,7 +289,7 @@ export function BookingCard({
                     className="w-full justify-start text-left font-normal"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "dd 'de' MMMM, yyyy", { locale: ptBR }) : <span>Escolha uma data</span>}
+                    {getDateRangeText()}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -210,10 +300,28 @@ export function BookingCard({
                     className="p-3 pointer-events-auto"
                     fromDate={new Date()}
                     disabled={(date) => !isDateAvailable(date)}
+                    modifiers={{
+                      selected: isInSelectedRange
+                    }}
+                    modifiersStyles={{
+                      selected: { backgroundColor: '#0284c7', color: 'white' }
+                    }}
                   />
                 </PopoverContent>
               </Popover>
             </div>
+            
+            {bookingType === 'daily' && selectedDays > 1 && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                {selectedDateRange.length > 0 ? (
+                  <span>
+                    Reservando {selectedDateRange.length} dia(s) consecutivo(s)
+                  </span>
+                ) : (
+                  <span>Selecione uma data inicial</span>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="mb-4">

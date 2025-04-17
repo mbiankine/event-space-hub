@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { format } from 'date-fns';
-import { pt } from 'date-fns/locale';
+import { ptBR } from 'date-fns/locale';
 
 interface SearchDateProps {
   date: Date | undefined;
@@ -19,7 +19,7 @@ export const SearchDate = ({ date, setDate }: SearchDateProps) => {
         <Button variant="ghost" className="flex items-center gap-2 min-w-[120px] justify-start py-6 px-4 border-r border-border">
           <CalendarIcon className="h-4 w-4" />
           <span className="text-sm truncate text-left">
-            {date ? format(date, 'dd MMM', { locale: pt }) : 'Data'}
+            {date ? format(date, 'dd MMM', { locale: ptBR }) : 'Data'}
           </span>
         </Button>
       </PopoverTrigger>

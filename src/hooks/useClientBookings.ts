@@ -46,11 +46,22 @@ export const useClientBookings = (user: User | null) => {
         
         if (currentError) throw currentError;
         
+        // Process images for each booking
+        const formatImageUrls = (images: string[] | undefined) => {
+          if (!images || !images.length) return [];
+          
+          return images.map(image => {
+            if (image.startsWith('http')) return image;
+            const { data } = supabase.storage.from('spaces').getPublicUrl(image);
+            return data.publicUrl;
+          });
+        };
+        
         // Format current bookings
         const formattedCurrentBookings = currentBookingsData.map((booking: any) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
-          images: booking.spaces?.images || [],
+          images: formatImageUrls(booking.spaces?.images) || [],
           location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
           payment_method: booking.payment_method || 'card' // Provide default when missing
@@ -78,7 +89,7 @@ export const useClientBookings = (user: User | null) => {
         const pastBookingsFormatted = pastBookingsData.map((booking: any) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
-          images: booking.spaces?.images || [],
+          images: formatImageUrls(booking.spaces?.images) || [],
           location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
           payment_method: booking.payment_method || 'card' // Provide default when missing
