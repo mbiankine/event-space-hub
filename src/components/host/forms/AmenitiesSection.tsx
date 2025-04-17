@@ -1,22 +1,22 @@
 
 import { useState } from 'react';
 import { Control } from 'react-hook-form';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Wifi, Car, Music, UtensilsCrossed, Lightbulb, Sofa, ShieldCheck, Accessibility } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormSection } from './FormSection';
 import { SpaceFormValues } from './types';
 
-// Amenities options
+// Amenities options with icons
 const amenitiesOptions = [
-  { id: "wifi", label: "Wi-Fi" },
-  { id: "parking", label: "Estacionamento" },
-  { id: "sound", label: "Sistema de Som" },
-  { id: "lighting", label: "Iluminação" },
-  { id: "catering", label: "Serviço de Buffet" },
-  { id: "furniture", label: "Mobiliário" },
-  { id: "security", label: "Segurança" },
-  { id: "accessibility", label: "Acessibilidade" },
+  { id: "wifi", label: "Wi-Fi", icon: Wifi },
+  { id: "parking", label: "Estacionamento", icon: Car },
+  { id: "sound", label: "Sistema de Som", icon: Music },
+  { id: "lighting", label: "Iluminação", icon: Lightbulb },
+  { id: "catering", label: "Serviço de Buffet", icon: UtensilsCrossed },
+  { id: "furniture", label: "Mobiliário", icon: Sofa },
+  { id: "security", label: "Segurança", icon: ShieldCheck },
+  { id: "accessibility", label: "Acessibilidade", icon: Accessibility },
 ];
 
 interface AmenitiesSectionProps {
@@ -72,20 +72,24 @@ export function AmenitiesSection({ control, form }: AmenitiesSectionProps) {
   return (
     <FormSection title="Comodidades">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {amenitiesOptions.map((amenity) => (
-          <Button
-            key={amenity.id}
-            type="button"
-            variant={selectedAmenities.includes(amenity.id) ? "default" : "outline"}
-            onClick={() => handleAmenityToggle(amenity.id)}
-            className="justify-start"
-          >
-            {selectedAmenities.includes(amenity.id) ? (
-              <span className="mr-2">✓</span>
-            ) : null}
-            {amenity.label}
-          </Button>
-        ))}
+        {amenitiesOptions.map((amenity) => {
+          const Icon = amenity.icon;
+          return (
+            <Button
+              key={amenity.id}
+              type="button"
+              variant={selectedAmenities.includes(amenity.id) ? "default" : "outline"}
+              onClick={() => handleAmenityToggle(amenity.id)}
+              className="justify-start"
+            >
+              {selectedAmenities.includes(amenity.id) ? (
+                <span className="mr-2">✓</span>
+              ) : null}
+              <Icon className="h-4 w-4 mr-2" />
+              {amenity.label}
+            </Button>
+          );
+        })}
       </div>
 
       <div className="mt-4">

@@ -14,28 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
-  Wifi,
-  Music,
-  UtensilsCrossed,
-  ParkingCircle,
-  Tv,
-  Volume2,
-  Users,
-  Clock,
-  Star,
-  Share,
-  Heart,
-  ArrowLeft,
-  Check,
-  CheckCircle2,
-  Calendar as CalendarIcon,
+  Wifi, Music, UtensilsCrossed, ParkingCircle, Tv, Volume2, Users, Clock, Star, Share, Heart, ArrowLeft,
+  Check, CheckCircle2, CalendarIcon, Car, Lightbulb, Sofa, ShieldCheck, Accessibility
 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from "@/components/host/LoadingState";
-import { format, isWithinInterval, parse, addHours } from "date-fns";
+import { format, isWithinInterval, parse, addHours, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,6 +39,18 @@ import {
 } from "@/components/ui/form";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { toast } from "sonner";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
+  RadioGroup,
+  RadioGroupItem
+} from "@/components/ui/radio-group";
 
 const bookingFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -62,6 +61,8 @@ const bookingFormSchema = z.object({
   hours: z.number().min(1, { message: "Mínimo 1 hora" }).max(24, { message: "Máximo 24 horas" }),
   eventType: z.string().min(1, { message: "Tipo de evento é obrigatório" }),
   notes: z.string().optional(),
+  bookingType: z.enum(["hourly", "daily"]),
+  days: z.number().min(1, { message: "Mínimo 1 dia" }).max(30, { message: "Máximo 30 dias" }).optional(),
 });
 
 type BookingFormValues = z.infer<typeof bookingFormSchema>;
@@ -71,9 +72,13 @@ const SpaceDetail = () => {
   const [space, setSpace] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedHours, setSelectedHours] = useState(4);
+  const [selectedDays, setSelectedDays] = useState(1);
+  const [bookingType, setBookingType] = useState<"hourly" | "daily">("hourly");
   const [guests, setGuests] = useState(25);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
@@ -88,8 +93,10 @@ const SpaceDetail = () => {
       guests: 25,
       date: new Date(),
       hours: 4,
+      days: 1,
       eventType: "",
       notes: "",
+      bookingType: "hourly",
     },
   });
   
@@ -108,7 +115,13 @@ const SpaceDetail = () => {
         if (error) throw error;
         setSpace(data);
         
-        // After loading space, load existing bookings for this space
+        // After loading space, process available dates
+        if (data.availability && data.availability.length > 0) {
+          const availableDatesArray = data.availability.map((dateStr: string) => new Date(dateStr));
+          setAvailableDates(availableDatesArray);
+        }
+        
+        // Load existing bookings for this space
         await loadBookings(data.id);
       } catch (error) {
         console.error('Error fetching space:', error);
@@ -156,33 +169,58 @@ const SpaceDetail = () => {
   
   // Function to check if a date is available
   const isDateAvailable = (date: Date) => {
-    // Check if date is in unavailableDates
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    // If space has availability settings, check if this date is in the available dates
+    if (availableDates.length > 0) {
+      return availableDates.some(availableDate => 
+        format(availableDate, 'yyyy-MM-dd') === dateStr
+      );
+    }
+    
+    // Check if date is not in unavailableDates (bookings)
     return !unavailableDates.some(unavailableDate => 
-      format(unavailableDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+      format(unavailableDate, 'yyyy-MM-dd') === dateStr
     );
   };
   
   const handleBookNow = () => {
     if (!user) {
-      // If user is not logged in, redirect to login page
-      toast.info("Faça login para reservar este espaço", {
-        description: "Você será redirecionado para a página de login",
-        action: {
-          label: "Login",
-          onClick: () => navigate("/auth/login")
-        }
-      });
+      // If user is not logged in, show auth modal
+      setIsAuthModalOpen(true);
       return;
     }
     
+    // If user is logged in, proceed with booking
+    proceedWithBooking();
+  };
+  
+  const proceedWithBooking = () => {
     // Pre-fill form with current selections
     form.setValue('date', date || new Date());
     form.setValue('guests', guests);
     form.setValue('hours', selectedHours);
-    form.setValue('email', user.email || '');
+    form.setValue('days', selectedDays);
+    form.setValue('email', user?.email || '');
+    form.setValue('bookingType', bookingType);
     
     // Open booking form
+    setIsAuthModalOpen(false);
     setIsBookingModalOpen(true);
+  };
+  
+  const redirectToLogin = () => {
+    // Close auth modal
+    setIsAuthModalOpen(false);
+    // Redirect to login page
+    navigate("/auth/login");
+  };
+  
+  const redirectToRegister = () => {
+    // Close auth modal
+    setIsAuthModalOpen(false);
+    // Redirect to register page
+    navigate("/auth/register");
   };
   
   const onSubmit = async (values: BookingFormValues) => {
@@ -190,13 +228,17 @@ const SpaceDetail = () => {
     
     setIsSubmitting(true);
     try {
-      // Calculate pricing
-      const basePrice = space.pricing_type === 'hourly' 
-        ? space.hourly_price * values.hours 
-        : space.price;
+      // Calculate pricing based on booking type
+      let basePrice = 0;
       
-      const serviceFee = basePrice * 0.10; // 10% service fee
-      const totalPrice = basePrice + serviceFee;
+      if (values.bookingType === 'hourly') {
+        basePrice = (space.hourly_price || 0) * values.hours;
+      } else {
+        basePrice = space.price * (values.days || 1);
+      }
+      
+      // No service fee as requested
+      const totalPrice = basePrice;
       
       // Create booking in database
       const { data, error } = await supabase
@@ -207,7 +249,9 @@ const SpaceDetail = () => {
           host_id: space.host_id,
           booking_date: format(values.date, 'yyyy-MM-dd'),
           start_time: '10:00', // Default start time
-          end_time: format(addHours(parse('10:00', 'HH:mm', new Date()), values.hours), 'HH:mm'),
+          end_time: values.bookingType === 'hourly' ? 
+            format(addHours(parse('10:00', 'HH:mm', new Date()), values.hours), 'HH:mm') : 
+            undefined,
           guest_count: values.guests,
           event_type: values.eventType,
           notes: values.notes,
@@ -216,7 +260,7 @@ const SpaceDetail = () => {
           client_phone: values.phone,
           space_title: space.title,
           space_price: basePrice,
-          service_fee: serviceFee,
+          service_fee: 0, // No service fee as requested
           total_price: totalPrice,
           status: 'pending',
           payment_status: 'pending'
@@ -265,31 +309,35 @@ const SpaceDetail = () => {
   
   // Helper function to map amenities to icons
   const getAmenityIcon = (amenity: string) => {
-    const amenityMap: Record<string, any> = {
-      "Wi-Fi": <Wifi className="h-5 w-5" />,
-      "Sistema de Som": <Music className="h-5 w-5" />,
-      "Catering": <UtensilsCrossed className="h-5 w-5" />,
-      "Estacionamento": <ParkingCircle className="h-5 w-5" />,
-      "Projetor": <Tv className="h-5 w-5" />,
-      "Iluminação": <Volume2 className="h-5 w-5" />,
+    const amenityMap: Record<string, React.ReactNode> = {
+      "wifi": <Wifi className="h-5 w-5" />,
+      "sound": <Music className="h-5 w-5" />,
+      "catering": <UtensilsCrossed className="h-5 w-5" />,
+      "parking": <Car className="h-5 w-5" />,
+      "furniture": <Sofa className="h-5 w-5" />,
+      "lighting": <Lightbulb className="h-5 w-5" />,
+      "security": <ShieldCheck className="h-5 w-5" />,
+      "accessibility": <Accessibility className="h-5 w-5" />,
     };
     
     return amenityMap[amenity] || <Wifi className="h-5 w-5" />;
   };
   
-  // Calculate total price based on pricing type
+  // Calculate total price based on pricing type and booking type
   const calculatePrice = () => {
-    if (space.pricing_type === 'hourly') {
+    if (bookingType === 'hourly' && space.hourly_price) {
       return space.hourly_price * selectedHours;
+    } else if (bookingType === 'daily') {
+      return space.price * selectedDays;
     }
     return space.price;
   };
   
-  const serviceFee = calculatePrice() * 0.10; // 10% service fee
-  const totalPrice = calculatePrice() + serviceFee;
+  // No service fee as requested
+  const totalPrice = calculatePrice();
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col text-left">
       <Header />
       <main className="flex-1 container px-4 md:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-4">
@@ -392,16 +440,41 @@ const SpaceDetail = () => {
               <CardHeader>
                 <CardTitle>
                   {space.pricing_type === 'hourly' 
-                    ? `R$ ${space.hourly_price}`
-                    : `R$ ${space.price}`}
+                    ? `R$ ${space.hourly_price} por hora`
+                    : space.pricing_type === 'both' 
+                      ? `R$ ${space.price} por dia / R$ ${space.hourly_price} por hora`
+                      : `R$ ${space.price} por dia`}
                 </CardTitle>
                 <CardDescription>
-                  {space.pricing_type === 'hourly' 
-                    ? 'por hora' 
-                    : 'por diária'}
+                  Escolha como deseja reservar
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Pricing Type Selection */}
+                {space.pricing_type === 'both' && (
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-2">Tipo de Reserva</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button 
+                        variant={bookingType === "hourly" ? "default" : "outline"} 
+                        onClick={() => setBookingType("hourly")}
+                        className="w-full"
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Por Hora
+                      </Button>
+                      <Button 
+                        variant={bookingType === "daily" ? "default" : "outline"} 
+                        onClick={() => setBookingType("daily")}
+                        className="w-full"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        Por Dia
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-4">
                   <h4 className="font-medium mb-2">Selecione a data</h4>
                   <div className="border rounded-md p-3">
@@ -456,47 +529,75 @@ const SpaceDetail = () => {
                     </div>
                   </div>
                 </div>
-                <div className="mb-4">
-                  <h4 className="font-medium mb-2">Duração</h4>
-                  <div className="flex items-center justify-between border rounded-md p-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      <span>Horas</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => setSelectedHours(prev => Math.max(1, prev - 1))}
-                        disabled={selectedHours <= 1}
-                      >
-                        -
-                      </Button>
-                      <span className="w-8 text-center">{selectedHours}</span>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => setSelectedHours(prev => Math.min(24, prev + 1))}
-                        disabled={selectedHours >= 24}
-                      >
-                        +
-                      </Button>
+                
+                {bookingType === 'hourly' ? (
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-2">Duração em horas</h4>
+                    <div className="flex items-center justify-between border rounded-md p-3">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        <span>Horas</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => setSelectedHours(prev => Math.max(1, prev - 1))}
+                          disabled={selectedHours <= 1}
+                        >
+                          -
+                        </Button>
+                        <span className="w-8 text-center">{selectedHours}</span>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => setSelectedHours(prev => Math.min(24, prev + 1))}
+                          disabled={selectedHours >= 24}
+                        >
+                          +
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-2">Duração em dias</h4>
+                    <div className="flex items-center justify-between border rounded-md p-3">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-5 w-5" />
+                        <span>Dias</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => setSelectedDays(prev => Math.max(1, prev - 1))}
+                          disabled={selectedDays <= 1}
+                        >
+                          -
+                        </Button>
+                        <span className="w-8 text-center">{selectedDays}</span>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => setSelectedDays(prev => Math.min(30, prev + 1))}
+                          disabled={selectedDays >= 30}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between">
                     <span>
-                      {space.pricing_type === 'hourly' 
+                      {bookingType === 'hourly' 
                         ? `R$ ${space.hourly_price} x ${selectedHours} horas`
-                        : `R$ ${space.price} x 1 dia`}
+                        : `R$ ${space.price} x ${selectedDays} ${selectedDays > 1 ? 'dias' : 'dia'}`}
                     </span>
                     <span>R$ {calculatePrice().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Taxa de serviço</span>
-                    <span>R$ {serviceFee.toFixed(2)}</span>
                   </div>
                 </div>
                 
@@ -513,6 +614,26 @@ const SpaceDetail = () => {
             </Card>
           </div>
         </div>
+        
+        {/* Authentication Modal */}
+        <Dialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Faça login para continuar</DialogTitle>
+              <DialogDescription>
+                Para reservar um espaço é necessário ter uma conta. Por favor, entre com sua conta ou crie uma nova.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 py-4">
+              <Button className="w-full" onClick={redirectToLogin}>
+                Entrar com minha conta
+              </Button>
+              <Button variant="outline" className="w-full" onClick={redirectToRegister}>
+                Criar uma nova conta
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
         
         {/* Booking Form Modal */}
         {isBookingModalOpen && (
@@ -572,6 +693,48 @@ const SpaceDetail = () => {
                         />
                       </div>
                       
+                      <FormField
+                        control={form.control}
+                        name="bookingType"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel>Tipo de Reserva</FormLabel>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex flex-col space-y-1"
+                                disabled={space.pricing_type !== 'both'}
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem 
+                                    value="hourly" 
+                                    id="booking-hourly"
+                                    disabled={space.pricing_type === 'daily'}
+                                  />
+                                  <label htmlFor="booking-hourly" className="flex items-center text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    <Clock className="mr-2 h-4 w-4" />
+                                    Por Hora
+                                  </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem 
+                                    value="daily" 
+                                    id="booking-daily"
+                                    disabled={space.pricing_type === 'hourly'}
+                                  />
+                                  <label htmlFor="booking-daily" className="flex items-center text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    Por Diária
+                                  </label>
+                                </div>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -595,7 +758,7 @@ const SpaceDetail = () => {
                                     </Button>
                                   </FormControl>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
+                                <PopoverContent className="w-auto p-0" align="start">
                                   <Calendar
                                     mode="single"
                                     selected={field.value}
@@ -680,50 +843,97 @@ const SpaceDetail = () => {
                           )}
                         />
                         
-                        <FormField
-                          control={form.control}
-                          name="hours"
-                          render={({ field: { onChange, ...rest } }) => (
-                            <FormItem>
-                              <FormLabel>Duração (horas)</FormLabel>
-                              <FormControl>
-                                <div className="flex items-center border rounded-md h-10">
-                                  <Button 
-                                    type="button"
-                                    variant="ghost" 
-                                    className="h-full px-3" 
-                                    onClick={() => {
-                                      const newValue = Math.max(1, rest.value - 1);
-                                      onChange(newValue);
-                                    }}
-                                  >
-                                    -
-                                  </Button>
-                                  <Input 
-                                    className="border-none text-center" 
-                                    type="number"
-                                    min={1}
-                                    max={24}
-                                    onChange={(e) => onChange(parseInt(e.target.value) || 1)}
-                                    {...rest}
-                                  />
-                                  <Button 
-                                    type="button"
-                                    variant="ghost" 
-                                    className="h-full px-3" 
-                                    onClick={() => {
-                                      const newValue = Math.min(24, rest.value + 1);
-                                      onChange(newValue);
-                                    }}
-                                  >
-                                    +
-                                  </Button>
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {form.watch('bookingType') === 'hourly' ? (
+                          <FormField
+                            control={form.control}
+                            name="hours"
+                            render={({ field: { onChange, ...rest } }) => (
+                              <FormItem>
+                                <FormLabel>Duração (horas)</FormLabel>
+                                <FormControl>
+                                  <div className="flex items-center border rounded-md h-10">
+                                    <Button 
+                                      type="button"
+                                      variant="ghost" 
+                                      className="h-full px-3" 
+                                      onClick={() => {
+                                        const newValue = Math.max(1, rest.value - 1);
+                                        onChange(newValue);
+                                      }}
+                                    >
+                                      -
+                                    </Button>
+                                    <Input 
+                                      className="border-none text-center" 
+                                      type="number"
+                                      min={1}
+                                      max={24}
+                                      onChange={(e) => onChange(parseInt(e.target.value) || 1)}
+                                      {...rest}
+                                    />
+                                    <Button 
+                                      type="button"
+                                      variant="ghost" 
+                                      className="h-full px-3" 
+                                      onClick={() => {
+                                        const newValue = Math.min(24, rest.value + 1);
+                                        onChange(newValue);
+                                      }}
+                                    >
+                                      +
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ) : (
+                          <FormField
+                            control={form.control}
+                            name="days"
+                            render={({ field: { onChange, ...rest } }) => (
+                              <FormItem>
+                                <FormLabel>Duração (dias)</FormLabel>
+                                <FormControl>
+                                  <div className="flex items-center border rounded-md h-10">
+                                    <Button 
+                                      type="button"
+                                      variant="ghost" 
+                                      className="h-full px-3" 
+                                      onClick={() => {
+                                        const newValue = Math.max(1, rest.value || 1 - 1);
+                                        onChange(newValue);
+                                      }}
+                                    >
+                                      -
+                                    </Button>
+                                    <Input 
+                                      className="border-none text-center" 
+                                      type="number"
+                                      min={1}
+                                      max={30}
+                                      onChange={(e) => onChange(parseInt(e.target.value) || 1)}
+                                      {...rest}
+                                    />
+                                    <Button 
+                                      type="button"
+                                      variant="ghost" 
+                                      className="h-full px-3" 
+                                      onClick={() => {
+                                        const newValue = Math.min(30, (rest.value || 1) + 1);
+                                        onChange(newValue);
+                                      }}
+                                    >
+                                      +
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
                       </div>
                       
                       <FormField
@@ -750,23 +960,15 @@ const SpaceDetail = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span>
-                          {space.pricing_type === 'hourly' 
+                          {form.watch('bookingType') === 'hourly' 
                             ? `R$ ${space.hourly_price} x ${form.watch('hours')} horas`
-                            : `R$ ${space.price} x 1 dia`}
+                            : `R$ ${space.price} x ${form.watch('days') || 1} ${(form.watch('days') || 1) > 1 ? 'dias' : 'dia'}`}
                         </span>
                         <span>R$ {
-                          space.pricing_type === 'hourly' 
+                          form.watch('bookingType') === 'hourly' 
                             ? (space.hourly_price * form.watch('hours')).toFixed(2)
-                            : space.price.toFixed(2)
+                            : (space.price * (form.watch('days') || 1)).toFixed(2)
                         }</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Taxa de serviço</span>
-                        <span>R$ {(
-                          space.pricing_type === 'hourly' 
-                            ? space.hourly_price * form.watch('hours') * 0.10
-                            : space.price * 0.10
-                        ).toFixed(2)}</span>
                       </div>
                     </div>
                     
@@ -775,9 +977,9 @@ const SpaceDetail = () => {
                     <div className="flex justify-between font-semibold">
                       <span>Total</span>
                       <span>R$ {(
-                        space.pricing_type === 'hourly' 
-                          ? (space.hourly_price * form.watch('hours') * 1.10)
-                          : (space.price * 1.10)
+                        form.watch('bookingType') === 'hourly' 
+                          ? (space.hourly_price * form.watch('hours'))
+                          : (space.price * (form.watch('days') || 1))
                       ).toFixed(2)}</span>
                     </div>
                   </CardContent>
