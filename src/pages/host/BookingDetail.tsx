@@ -44,7 +44,13 @@ const BookingDetail = () => {
           return;
         }
 
-        setBooking(bookingData);
+        // Ensure payment_method has a default value if it's missing
+        const completeBookingData = {
+          ...bookingData,
+          payment_method: bookingData.payment_method || 'card'
+        };
+
+        setBooking(completeBookingData);
 
         // Fetch space details if space_id exists
         if (bookingData.space_id) {

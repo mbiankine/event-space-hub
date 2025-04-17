@@ -11,7 +11,7 @@ export interface Booking {
   notes?: string;
   status: string;
   payment_status: string;
-  payment_method: string;
+  payment_method?: string; // Make this optional with ?
   total_price: number;
   space_price: number;
   additional_services_price: number;

@@ -53,7 +53,7 @@ export const useClientBookings = (user: User | null) => {
           images: booking.spaces?.images || [],
           location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
-          payment_method: booking.payment_method || 'card'
+          payment_method: booking.payment_method || 'card' // Handle case when payment_method is undefined
         }));
         
         // Get past bookings
@@ -81,7 +81,7 @@ export const useClientBookings = (user: User | null) => {
           images: booking.spaces?.images || [],
           location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
-          payment_method: booking.payment_method || 'card'
+          payment_method: booking.payment_method || 'card' // Handle case when payment_method is undefined
         }));
         
         if (isMounted) {
