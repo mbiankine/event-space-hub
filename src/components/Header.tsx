@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { SearchBar } from "./SearchBar";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,9 +38,8 @@ export const Header = () => {
           <span className="text-xl font-bold text-primary">EventSpace</span>
         </Link>
 
-        <div className="hidden md:flex md:flex-1 md:justify-center md:px-4">
-          <SearchBar />
-        </div>
+        {/* Search bar removed from here */}
+        <div className="flex-1"></div>
 
         <div className="flex items-center gap-4">
           <ThemeSwitcher />

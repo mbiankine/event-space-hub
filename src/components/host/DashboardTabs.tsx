@@ -35,8 +35,8 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
         </div>
 
         <TabsContent value="spaces" className="flex-1 space-y-4 mt-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-left">Meus Espaços</h2>
+          <div className="flex justify-between items-center text-left">
+            <h2 className="text-xl font-semibold">Meus Espaços</h2>
             <Button variant="outline" size="sm" asChild>
               <Link to="/host/spaces">Ver todos</Link>
             </Button>
@@ -45,8 +45,8 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
         </TabsContent>
 
         <TabsContent value="bookings" className="flex-1 space-y-4 mt-4">
-          <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-semibold text-left">Próximas Reservas</h2>
+          <div className="flex justify-between mb-4 text-left">
+            <h2 className="text-xl font-semibold">Próximas Reservas</h2>
             <Button variant="outline" asChild>
               <Link to="/host/bookings">
                 <Calendar className="h-4 w-4 mr-2" />
@@ -57,7 +57,7 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
           <BookingsList bookings={bookings} />
         </TabsContent>
 
-        <TabsContent value="analytics" className="flex-1 space-y-6 mt-4">
+        <TabsContent value="analytics" className="flex-1 space-y-6 mt-4 text-left">
           <AnalyticsContent />
         </TabsContent>
       </Tabs>

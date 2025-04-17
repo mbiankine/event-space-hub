@@ -64,7 +64,7 @@ const Index = () => {
       <Header />
       
       {/* Search bar */}
-      <div className="bg-white shadow-sm py-4 sticky top-16 z-40">
+      <div className="bg-background shadow-sm py-4 sticky top-16 z-40">
         <div className="container px-4 md:px-6 lg:px-8">
           <SearchBar />
         </div>
