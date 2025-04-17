@@ -29,7 +29,7 @@ export function usePaymentVerification(sessionId: string | null) {
         // First, check if we already have a booking with this payment_intent
         const { data: existingBooking, error: existingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title, client_id, payment_status')
+          .select('id, status, space_title, client_id, payment_status, payment_method')
           .eq('payment_intent', sessionId)
           .maybeSingle();
         
@@ -42,11 +42,12 @@ export function usePaymentVerification(sessionId: string | null) {
         if (existingBooking) {
           console.log("Found existing booking with this payment intent:", existingBooking.id);
           
-          // If payment is recorded but status isn't confirmed yet, update it
-          if (existingBooking.payment_status === 'paid' && existingBooking.status !== 'confirmed') {
+          // If payment status isn't already marked as paid, update it
+          if (existingBooking.payment_status !== 'paid') {
             const { error: updateError } = await supabase
               .from('bookings')
               .update({ 
+                payment_status: 'paid',
                 status: 'confirmed',
                 updated_at: new Date().toISOString()
               })
@@ -56,6 +57,8 @@ export function usePaymentVerification(sessionId: string | null) {
               console.error("Error updating booking status:", updateError);
             } else {
               existingBooking.status = 'confirmed';
+              existingBooking.payment_status = 'paid';
+              console.log("Updated booking payment status to paid");
             }
           }
           
@@ -63,7 +66,7 @@ export function usePaymentVerification(sessionId: string | null) {
             id: existingBooking.id,
             status: existingBooking.status,
             space_title: existingBooking.space_title,
-            payment_method: 'card' // Default to card since payment_method doesn't exist in the table
+            payment_method: existingBooking.payment_method || 'card'
           });
           return;
         }
@@ -103,6 +106,7 @@ export function usePaymentVerification(sessionId: string | null) {
               payment_status: 'paid',
               status: 'confirmed', // Always set status to confirmed when payment is successful
               payment_intent: sessionId,
+              payment_method: 'card',
               updated_at: new Date().toISOString()
             })
             .eq('id', booking.id);
@@ -116,7 +120,7 @@ export function usePaymentVerification(sessionId: string | null) {
             id: booking.id,
             status: 'confirmed',
             space_title: booking.space_title,
-            payment_method: 'card' // Default to card since payment_method doesn't exist in table
+            payment_method: 'card'
           });
           
           toast.success('Pagamento confirmado com sucesso!');

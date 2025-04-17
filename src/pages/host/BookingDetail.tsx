@@ -45,8 +45,8 @@ const BookingDetail = () => {
         // Create a properly typed booking object
         const tempBooking: Booking = {
           ...bookingData,
-          // Since payment_method might not exist in bookingData, provide a default
-          // or leave it undefined as it's optional in the Booking type
+          // Make sure payment_method is included even if it's undefined
+          payment_method: bookingData.payment_method
         };
 
         setBooking(tempBooking);

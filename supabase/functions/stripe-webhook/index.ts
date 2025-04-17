@@ -61,6 +61,7 @@ serve(async (req) => {
 
         // Update booking status if this was a booking payment
         if (session.metadata?.booking_id) {
+          // Update the booking record with payment_method and payment status
           const { error: updateError } = await supabaseAdmin
             .from('bookings')
             .update({
@@ -75,7 +76,30 @@ serve(async (req) => {
             console.error("Error updating booking:", updateError);
             throw updateError;
           }
-          console.log(`Updated booking ${session.metadata.booking_id} status to confirmed`);
+          console.log(`Updated booking ${session.metadata.booking_id} status to confirmed and payment to paid`);
+          
+          // Force a double-check update after a short delay to ensure changes are applied
+          setTimeout(async () => {
+            try {
+              const { error: doubleCheckError } = await supabaseAdmin
+                .from('bookings')
+                .update({
+                  payment_status: 'paid',
+                  status: 'confirmed',
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', session.metadata.booking_id)
+                .eq('payment_status', 'pending');
+                
+              if (doubleCheckError) {
+                console.error("Error in double-check update:", doubleCheckError);
+              } else {
+                console.log("Double-check update completed successfully");
+              }
+            } catch (err) {
+              console.error("Error in double-check update:", err);
+            }
+          }, 2000);
         }
         break;
       }

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -13,6 +14,7 @@ import BookingInfo from '@/components/client/booking/BookingInfo';
 import PaymentDetails from '@/components/client/booking/PaymentDetails';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { useStripeConfig } from '@/hooks/useStripeConfig';
 
 const BookingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +22,21 @@ const BookingDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { startStripeCheckout, isLoading: isPaymentLoading } = useStripeConfig();
+  
+  // Function to handle payment for pending bookings
+  const handlePayment = async () => {
+    if (!booking) return;
+    
+    try {
+      let price = booking.total_price;
+      const days = 1; // Default to 1 day if not specified
+      
+      await startStripeCheckout(booking.space_id, price, days, booking.id);
+    } catch (error: any) {
+      console.error('Payment error:', error);
+    }
+  };
   
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -52,6 +69,7 @@ const BookingDetails = () => {
           throw new Error('Reserva não encontrada');
         }
         
+        // If payment is marked as paid but status is still pending, update status to confirmed
         if (data.payment_status === 'paid' && data.status === 'pending') {
           const { error: updateError } = await supabase
             .from('bookings')
@@ -84,6 +102,25 @@ const BookingDetails = () => {
     };
     
     fetchBookingDetails();
+    
+    // Set up a real-time subscription to get updates to this booking
+    const channel = supabase
+      .channel('booking-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bookings',
+        filter: `id=eq.${id}`
+      }, (payload) => {
+        console.log('Booking updated:', payload);
+        // Refresh booking data when updates occur
+        fetchBookingDetails();
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id, user]);
   
   if (isLoading) {
@@ -134,6 +171,9 @@ const BookingDetails = () => {
     );
   }
   
+  // Check if payment is actually completed based on payment_status
+  const isPaymentComplete = booking.payment_status === 'paid';
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -160,7 +200,7 @@ const BookingDetails = () => {
           </div>
           
           <div className="lg:col-span-1">
-            {booking.payment_status === 'paid' ? (
+            {isPaymentComplete ? (
               <MessagesThread 
                 contactId={booking.host_id}
                 spaceId={booking.space_id}
@@ -171,7 +211,9 @@ const BookingDetails = () => {
                 <CardContent className="text-center py-8">
                   <MessageCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p className="mb-4">As mensagens estarão disponíveis após o pagamento.</p>
-                  <Button>Efetuar Pagamento</Button>
+                  <Button onClick={handlePayment} disabled={isPaymentLoading}>
+                    {isPaymentLoading ? 'Processando...' : 'Efetuar Pagamento'}
+                  </Button>
                 </CardContent>
               </Card>
             )}
