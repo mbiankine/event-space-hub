@@ -1,17 +1,15 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LoadingState } from "@/components/host/LoadingState";
-import { SpaceHeader } from "@/components/space/SpaceHeader";
-import { SpaceGallery } from "@/components/space/SpaceGallery";
-import { SpaceContent } from "@/components/space/SpaceContent";
-import { BookingCard } from "@/components/space/booking/BookingCard";
+import { SpaceDetailContent } from "@/components/space/SpaceDetailContent";
 import { AuthDialog } from "@/components/space/AuthDialog";
 import { BookingFormModal } from "@/components/space/BookingFormModal";
 import { useSpaceDetail } from "@/hooks/useSpaceDetail";
 import { useSpaceBooking } from "@/hooks/useSpaceBooking";
+import { useBookingState } from "@/hooks/useBookingState";
 import { supabase } from '@/integrations/supabase/client';
 
 const SpaceDetail = () => {
@@ -19,12 +17,7 @@ const SpaceDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // State for booking form
-  const [date, setDate] = useState<Date>();
-  const [guests, setGuests] = useState(25);
-  const [selectedHours, setSelectedHours] = useState(4);
-  const [selectedDays, setSelectedDays] = useState(1);
-  const [bookingType, setBookingType] = useState<"hourly" | "daily">("hourly");
+  const bookingState = useBookingState();
   
   const {
     space,
@@ -68,41 +61,24 @@ const SpaceDetail = () => {
   if (!space) return null;
 
   const imageUrls = getImageUrls(space);
+  
+  const bookingProps = {
+    ...bookingState,
+    isDateAvailable: (date: Date) => !unavailableDates.some(d => d.getTime() === date.getTime()),
+    handleBookNow,
+    unavailableDates
+  };
 
   return (
     <div className="min-h-screen flex flex-col text-left">
       <Header />
       <main className="flex-1 container px-4 md:px-6 lg:px-8 py-6">
-        <SpaceHeader title={space.title} location={space.location} />
-        <SpaceGallery imageUrls={imageUrls} title={space.title} />
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
-            <SpaceContent 
-              space={space}
-              onMessageClick={() => setIsBookingModalOpen(true)}
-            />
-          </div>
-          
-          <div className="space-y-6">
-            <BookingCard 
-              space={space}
-              date={date}
-              setDate={setDate}
-              guests={guests}
-              setGuests={setGuests}
-              selectedHours={selectedHours}
-              setSelectedHours={setSelectedHours}
-              selectedDays={selectedDays}
-              setSelectedDays={setSelectedDays}
-              bookingType={bookingType}
-              setBookingType={setBookingType}
-              isDateAvailable={(date) => !unavailableDates.some(d => d.getTime() === date.getTime())}
-              handleBookNow={handleBookNow}
-              unavailableDates={unavailableDates}
-            />
-          </div>
-        </div>
+        <SpaceDetailContent
+          space={space}
+          imageUrls={imageUrls}
+          bookingProps={bookingProps}
+          onMessageClick={() => setIsBookingModalOpen(true)}
+        />
         
         <AuthDialog 
           isOpen={isAuthModalOpen}
