@@ -2,11 +2,62 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import * as crypto from "https://deno.land/std@0.190.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Custom webhook signature verification function
+async function verifyStripeWebhook(payload: string, signature: string, secret: string): Promise<boolean> {
+  try {
+    // Get the timestamp and signatures from the stripe-signature header
+    const details = signature.split(',').reduce((acc: any, item) => {
+      const [key, value] = item.split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+    
+    if (!details.t || !details.v1) {
+      console.error('Invalid signature format');
+      return false;
+    }
+
+    const timestamp = details.t;
+    const signedPayload = `${timestamp}.${payload}`;
+    
+    // Convert the webhook secret to a crypto key
+    const encoder = new TextEncoder();
+    const secretBytes = encoder.encode(secret);
+    const key = await crypto.subtle.importKey(
+      'raw',
+      secretBytes,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign', 'verify']
+    );
+    
+    // Generate the signature
+    const signatureBytes = encoder.encode(signedPayload);
+    const signed = await crypto.subtle.sign(
+      { name: 'HMAC' },
+      key,
+      signatureBytes
+    );
+    
+    // Convert the signature to a hex string
+    const expectedSignature = Array.from(new Uint8Array(signed))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Compare signatures
+    return expectedSignature === details.v1;
+  } catch (err) {
+    console.error('Signature verification error:', err);
+    return false;
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -45,8 +96,16 @@ serve(async (req) => {
     // Get the raw body
     const body = await req.text();
     
-    // Verify the event
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    // Verify the event using our custom function instead of Stripe's native method
+    const isValid = await verifyStripeWebhook(body, signature, webhookSecret);
+    
+    if (!isValid) {
+      console.error("Invalid signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
+    }
+    
+    // Parse the event data manually
+    const event = JSON.parse(body);
     
     console.log("Received Stripe webhook event:", event.type);
 

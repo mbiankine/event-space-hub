@@ -25,28 +25,30 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
   };
 
   const getPaymentStatusBadge = (status: string | null) => {
-    if (!status) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    if (!status || status === 'pending') {
+      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    }
     
     switch (status) {
       case 'paid':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Pago</Badge>;
       case 'failed':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Falhou</Badge>;
-      case 'pending':
       default:
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
     }
   };
 
   const getBookingStatusBadge = (status: string | null) => {
-    if (!status) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    if (!status || status === 'pending') {
+      return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    }
     
     switch (status) {
       case 'confirmed':
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Confirmado</Badge>;
       case 'cancelled':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Cancelado</Badge>;
-      case 'pending':
       default:
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
     }
