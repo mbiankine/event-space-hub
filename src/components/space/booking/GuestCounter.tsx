@@ -1,6 +1,7 @@
 
-import { Button } from "@/components/ui/button";
-import { Users } from "lucide-react";
+import React from 'react';
+import { Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface GuestCounterProps {
   guests: number;
@@ -8,14 +9,11 @@ interface GuestCounterProps {
   maxCapacity: number;
 }
 
-export const GuestCounter = ({ guests, setGuests, maxCapacity }: GuestCounterProps) => {
-  const decreaseGuests = () => {
-    const newValue = Math.max(1, guests - 25);
-    setGuests(newValue);
-  };
-
-  const increaseGuests = () => {
-    const newValue = Math.min(maxCapacity, guests + 25);
+export function GuestCounter({ guests, setGuests, maxCapacity }: GuestCounterProps) {
+  const handleGuestsChange = (increment: boolean) => {
+    const newValue = increment 
+      ? Math.min(maxCapacity, guests + 25)
+      : Math.max(1, guests - 25);
     setGuests(newValue);
   };
 
@@ -31,7 +29,7 @@ export const GuestCounter = ({ guests, setGuests, maxCapacity }: GuestCounterPro
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={decreaseGuests}
+            onClick={() => handleGuestsChange(false)}
             disabled={guests <= 1}
           >
             -
@@ -40,7 +38,7 @@ export const GuestCounter = ({ guests, setGuests, maxCapacity }: GuestCounterPro
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={increaseGuests}
+            onClick={() => handleGuestsChange(true)}
             disabled={guests >= maxCapacity}
           >
             +
@@ -49,4 +47,4 @@ export const GuestCounter = ({ guests, setGuests, maxCapacity }: GuestCounterPro
       </div>
     </div>
   );
-};
+}

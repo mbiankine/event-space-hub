@@ -1,6 +1,7 @@
 
-import { Button } from "@/components/ui/button";
-import { Clock, CalendarIcon } from "lucide-react";
+import React from 'react';
+import { Clock, CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DurationSelectorProps {
   bookingType: "hourly" | "daily";
@@ -12,7 +13,7 @@ interface DurationSelectorProps {
   isDateAvailable: (date: Date) => boolean;
 }
 
-export const DurationSelector = ({
+export function DurationSelector({
   bookingType,
   selectedHours,
   setSelectedHours,
@@ -20,31 +21,22 @@ export const DurationSelector = ({
   setSelectedDays,
   date,
   isDateAvailable
-}: DurationSelectorProps) => {
-  const decreaseHours = () => {
-    const newValue = Math.max(1, selectedHours - 1);
+}: DurationSelectorProps) {
+  const handleHoursChange = (increment: boolean) => {
+    const newValue = increment
+      ? Math.min(24, selectedHours + 1)
+      : Math.max(1, selectedHours - 1);
     setSelectedHours(newValue);
   };
 
-  const increaseHours = () => {
-    const newValue = Math.min(24, selectedHours + 1);
-    setSelectedHours(newValue);
-  };
-
-  const decreaseDays = () => {
-    if (selectedDays <= 1) return;
+  const handleDaysChange = (increment: boolean) => {
+    if (!increment && selectedDays <= 1) return;
     
-    const newValue = Math.max(1, selectedDays - 1);
-    setSelectedDays(newValue);
-  };
-
-  const increaseDays = () => {
-    if (bookingType !== 'daily') return;
+    const newValue = increment
+      ? Math.min(30, selectedDays + 1)
+      : Math.max(1, selectedDays - 1);
     
-    const newValue = selectedDays + 1;
-    
-    // Check if adding another day is possible
-    if (date) {
+    if (increment && date) {
       const nextDate = new Date(date);
       nextDate.setDate(nextDate.getDate() + selectedDays);
       if (!isDateAvailable(nextDate)) {
@@ -52,45 +44,65 @@ export const DurationSelector = ({
       }
     }
     
-    setSelectedDays(Math.min(30, newValue));
+    setSelectedDays(newValue);
   };
+
+  if (bookingType === 'hourly') {
+    return (
+      <div className="mb-4">
+        <h4 className="font-medium mb-2">Duração em horas</h4>
+        <div className="flex items-center justify-between border rounded-md p-3">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            <span>Horas</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => handleHoursChange(false)}
+              disabled={selectedHours <= 1}
+            >
+              -
+            </Button>
+            <span className="w-8 text-center">{selectedHours}</span>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => handleHoursChange(true)}
+              disabled={selectedHours >= 24}
+            >
+              +
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4">
-      <h4 className="font-medium mb-2">
-        {bookingType === 'hourly' ? 'Duração em horas' : 'Duração em dias'}
-      </h4>
+      <h4 className="font-medium mb-2">Duração em dias</h4>
       <div className="flex items-center justify-between border rounded-md p-3">
         <div className="flex items-center gap-2">
-          {bookingType === 'hourly' ? (
-            <>
-              <Clock className="h-5 w-5" />
-              <span>Horas</span>
-            </>
-          ) : (
-            <>
-              <CalendarIcon className="h-5 w-5" />
-              <span>Dias</span>
-            </>
-          )}
+          <CalendarIcon className="h-5 w-5" />
+          <span>Dias</span>
         </div>
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={bookingType === 'hourly' ? decreaseHours : decreaseDays}
-            disabled={bookingType === 'hourly' ? selectedHours <= 1 : selectedDays <= 1}
+            onClick={() => handleDaysChange(false)}
+            disabled={selectedDays <= 1}
           >
             -
           </Button>
-          <span className="w-8 text-center">
-            {bookingType === 'hourly' ? selectedHours : selectedDays}
-          </span>
+          <span className="w-8 text-center">{selectedDays}</span>
           <Button 
             variant="outline" 
             size="icon" 
-            onClick={bookingType === 'hourly' ? increaseHours : increaseDays}
-            disabled={bookingType === 'hourly' ? selectedHours >= 24 : selectedDays >= 30}
+            onClick={() => handleDaysChange(true)}
+            disabled={selectedDays >= 30}
           >
             +
           </Button>
@@ -98,4 +110,4 @@ export const DurationSelector = ({
       </div>
     </div>
   );
-};
+}
