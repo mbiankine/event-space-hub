@@ -1,7 +1,7 @@
 
 import { Control } from 'react-hook-form';
 import { ptBR } from 'date-fns/locale';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isBefore } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import {
   FormField,
@@ -30,13 +30,18 @@ export function AvailabilitySection({ control }: AvailabilitySectionProps) {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const allDays = eachDayOfInterval({ start, end });
+    const today = new Date();
     
-    // Filter out dates that are already in the current month to avoid duplicates
+    // Filtrar as datas para incluir apenas datas futuras ou o dia atual
+    const futureDays = allDays.filter(date => 
+      !isBefore(date, today) || format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'));
+    
+    // Filtrar datas que já estão no current month para evitar duplicatas
     const currentDatesWithoutThisMonth = currentDates.filter(d => 
       d.getMonth() !== date.getMonth() || d.getFullYear() !== date.getFullYear());
     
-    // Add all days of the selected month
-    onChange([...currentDatesWithoutThisMonth, ...allDays]);
+    // Adicionar todas as datas futuras do mês selecionado
+    onChange([...currentDatesWithoutThisMonth, ...futureDays]);
   };
 
   return (
@@ -85,7 +90,7 @@ export function AvailabilitySection({ control }: AvailabilitySectionProps) {
                   mode="multiple"
                   selected={field.value}
                   onSelect={field.onChange}
-                  disabled={(date) => date < new Date()}
+                  disabled={(date) => date < new Date() && format(date, 'yyyy-MM-dd') !== format(new Date(), 'yyyy-MM-dd')}
                   locale={ptBR}
                   className={cn("p-3 pointer-events-auto")}
                 />

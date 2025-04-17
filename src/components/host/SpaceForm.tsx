@@ -114,7 +114,11 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
           initialImages={form.getValues("images")}
         />
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
+        <Button 
+          type="submit" 
+          disabled={isSubmitting} 
+          className="w-full"
+        >
           {isSubmitting ? "Salvando..." : "Publicar Espaço"}
         </Button>
       </form>
