@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ClientBookingsList, ClientBooking } from '@/components/client/ClientBookingsList';
+import { toast } from 'sonner';
 
 const ClientDashboard = () => {
   const { user } = useAuth();
@@ -23,11 +24,12 @@ const ClientDashboard = () => {
       
       try {
         setIsLoading(true);
+        console.log("Fetching bookings for user ID:", user.id);
         
         // Fetch current bookings (future dates)
         const today = new Date().toISOString().split('T')[0];
         
-        // Get active bookings from the view we created
+        // Try to get active bookings from view first
         const { data: activeBookings, error: activeError } = await supabase
           .from('active_bookings')
           .select('*')
@@ -35,7 +37,38 @@ const ClientDashboard = () => {
           .gte('booking_date', today)
           .order('booking_date', { ascending: true });
           
-        if (activeError) throw activeError;
+        if (activeError) {
+          console.error("Error fetching from active_bookings view:", activeError);
+          // Fallback to direct bookings query if view fails
+          const { data: directBookings, error: directError } = await supabase
+            .from('bookings')
+            .select(`
+              *,
+              spaces (
+                title,
+                images,
+                location,
+                host_id
+              )
+            `)
+            .eq('client_id', user.id)
+            .gte('booking_date', today)
+            .order('booking_date', { ascending: true });
+          
+          if (directError) throw directError;
+          
+          const formattedBookings = directBookings.map((booking) => ({
+            ...booking,
+            space_title: booking.spaces?.title || booking.space_title,
+            images: booking.spaces?.images,
+            location: booking.spaces?.location,
+            host_id: booking.spaces?.host_id || booking.host_id
+          }));
+          
+          setCurrentBookings(formattedBookings || []);
+        } else {
+          setCurrentBookings(activeBookings || []);
+        }
         
         // Fetch past bookings
         const { data: pastBookingsData, error: pastError } = await supabase
@@ -64,14 +97,18 @@ const ClientDashboard = () => {
           host_id: booking.spaces?.host_id || booking.host_id
         }));
         
-        setCurrentBookings(activeBookings || []);
         setPastBookings(pastBookingsFormatted || []);
+        console.log("Fetched bookings:", {
+          current: activeBookings?.length || 0,
+          past: pastBookingsFormatted?.length || 0
+        });
         
         // TODO: Implement favorites system in the future
         setFavoriteSpaces([]);
         
       } catch (error) {
         console.error('Error fetching bookings:', error);
+        toast.error('Erro ao carregar suas reservas. Tente novamente.');
       } finally {
         setIsLoading(false);
       }

@@ -28,7 +28,7 @@ export function usePaymentVerification(sessionId: string | null) {
         // First, check if we already have a booking with this payment_intent
         const { data: existingBooking, error: existingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title')
+          .select('id, status, space_title, client_id')
           .eq('payment_intent', sessionId)
           .maybeSingle();
         
@@ -50,10 +50,20 @@ export function usePaymentVerification(sessionId: string | null) {
         
         console.log("Looking for recent pending bookings");
         
+        // Get the current user to make sure we link the booking to the right client
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error("Error getting current user:", userError);
+          throw userError;
+        }
+        
+        // Look for the most recent pending booking for this user
         const { data: pendingBookings, error: pendingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title, payment_intent')
+          .select('id, status, space_title, payment_intent, client_id')
           .eq('payment_status', 'pending')
+          .eq('client_id', user?.id)
           .is('payment_intent', null)
           .order('created_at', { ascending: false })
           .limit(1);
