@@ -7,11 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
+// Define a simple type for booking details to avoid deep type instantiation
+interface BookingDetails {
+  id: string;
+  status: string;
+  space_title?: string;
+}
+
 const ReservationSuccess = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [isLoading, setIsLoading] = useState(true);
-  const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
   
   useEffect(() => {
     const verifyPayment = async () => {
@@ -42,15 +49,14 @@ const ReservationSuccess = () => {
           const booking = bookingData[0];
           
           // Update the booking status
-          const { data: updatedBooking, error: updateError } = await supabase
+          const { error: updateError } = await supabase
             .from('bookings')
             .update({
               payment_status: 'paid',
               status: 'confirmed',
               updated_at: new Date().toISOString()
             })
-            .eq('id', booking.id)
-            .select();
+            .eq('id', booking.id);
           
           if (updateError) {
             console.error("Error updating booking:", updateError);
@@ -85,7 +91,7 @@ const ReservationSuccess = () => {
             const booking = pendingBookings[0];
             
             // Update the booking with both payment_status and the session ID
-            const { data: updatedBooking, error: updateError } = await supabase
+            const { error: updateError } = await supabase
               .from('bookings')
               .update({
                 payment_status: 'paid',
@@ -93,8 +99,7 @@ const ReservationSuccess = () => {
                 payment_intent: sessionId,
                 updated_at: new Date().toISOString()
               })
-              .eq('id', booking.id)
-              .select();
+              .eq('id', booking.id);
             
             if (updateError) {
               console.error("Error updating booking:", updateError);

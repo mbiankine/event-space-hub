@@ -38,6 +38,7 @@ export function useStripeConfig() {
       if (data?.url) {
         // Show a toast notification before redirecting
         toast.info('Redirecionando para o checkout...');
+        console.log("Redirecting to Stripe URL:", data.url);
         
         // Small timeout to allow toast to show before redirecting
         setTimeout(() => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, addHours, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -55,6 +56,7 @@ export function BookingCard({
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
   const [isStripeConfigMissing, setIsStripeConfigMissing] = useState(false);
   const { startStripeCheckout } = useStripeConfig();
+  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
   
   const calculatePrice = () => {
     if (bookingType === 'hourly' && space.hourly_price) {
@@ -110,6 +112,12 @@ export function BookingCard({
       const bookingResult = await handleBookNow();
       if (!bookingResult || !bookingResult.success) {
         throw new Error('Falha ao criar reserva');
+      }
+      
+      // If the booking has a bookingId field, set it to confirmedBookingId
+      if (bookingResult.bookingId) {
+        setConfirmedBookingId(bookingResult.bookingId);
+        handleProceedToPayment();
       }
       
     } catch (error: any) {

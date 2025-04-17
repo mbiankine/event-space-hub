@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from 'react';
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -199,7 +200,7 @@ const SpaceDetail = () => {
     return proceedWithBooking();
   };
   
-  const proceedWithBooking = async (): Promise<{ success: boolean }> => {
+  const proceedWithBooking = async (): Promise<{ success: boolean, bookingId?: string }> => {
     if (!user || !space) {
       return { success: false };
     }
