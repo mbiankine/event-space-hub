@@ -1,6 +1,4 @@
 
-# Learn more about this file in docs: https://supabase.com/docs/reference/cli/config
-
 project_id = "gxxxqmthymdepqvxsaxc"
 
 [api]
@@ -21,3 +19,7 @@ verify_jwt = true
 
 [functions.create-checkout]
 verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
