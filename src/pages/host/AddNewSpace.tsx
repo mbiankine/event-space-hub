@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from "@/components/Header";
@@ -61,6 +62,7 @@ const AddNewSpace = () => {
         capacity: parseInt(values.capacity.toString()) || 0,
         space_type: values.spaceType,
         amenities: allAmenities,
+        custom_amenities: values.pricedAmenities || [],
         host_id: user.id,
         availability: (values.availability || []).map((date: Date) => date.toISOString().split('T')[0]),
         pricing_type: values.pricingType,

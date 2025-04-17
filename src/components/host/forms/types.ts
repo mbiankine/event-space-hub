@@ -1,4 +1,6 @@
 
+import { CustomAmenity } from "@/types/SpaceTypes";
+
 export interface SpaceFormValues {
   title: string;
   description: string;
@@ -18,7 +20,8 @@ export interface SpaceFormValues {
   capacity: number;
   spaceType: string;
   amenities: string[];
-  customAmenities?: string[];
+  customAmenities: string[];
+  pricedAmenities?: CustomAmenity[];
   availability: Date[];
-  images?: File[];
+  images: (File | string)[];
 }

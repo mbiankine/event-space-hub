@@ -22,5 +22,12 @@ export interface Space {
   hourly_price?: number;
   availability?: string[];
   amenities?: string[];
+  custom_amenities?: CustomAmenity[];
   host_id: string;
+}
+
+export interface CustomAmenity {
+  name: string;
+  price: number;
+  description?: string;
 }

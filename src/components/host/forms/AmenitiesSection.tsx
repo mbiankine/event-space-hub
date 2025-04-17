@@ -1,11 +1,20 @@
 
 import { useState } from 'react';
 import { Control } from 'react-hook-form';
-import { Plus, X, Wifi, Car, Music, UtensilsCrossed, Lightbulb, Sofa, ShieldCheck, Accessibility } from 'lucide-react';
+import { Plus, X, Wifi, Car, Music, UtensilsCrossed, Lightbulb, Sofa, ShieldCheck, Accessibility, DollarSign } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormSection } from './FormSection';
 import { SpaceFormValues } from './types';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 // Amenities options with icons
 const amenitiesOptions = [
@@ -33,7 +42,17 @@ export function AmenitiesSection({ control, form }: AmenitiesSectionProps) {
     form.getValues("customAmenities") || []
   );
   
+  const [pricedAmenities, setPricedAmenities] = useState<any[]>(
+    form.getValues("pricedAmenities") || []
+  );
+  
   const [newAmenity, setNewAmenity] = useState("");
+  const [isAddPricedAmenityOpen, setIsAddPricedAmenityOpen] = useState(false);
+  const [newPricedAmenity, setNewPricedAmenity] = useState({
+    name: "",
+    price: 0,
+    description: ""
+  });
 
   const handleAmenityToggle = (amenityId: string) => {
     setSelectedAmenities((prev) => {
@@ -67,6 +86,26 @@ export function AmenitiesSection({ control, form }: AmenitiesSectionProps) {
     const updatedCustomAmenities = customAmenities.filter(item => item !== amenity);
     setCustomAmenities(updatedCustomAmenities);
     form.setValue("customAmenities", updatedCustomAmenities);
+  };
+
+  const addPricedAmenity = () => {
+    if (newPricedAmenity.name.trim() && newPricedAmenity.price > 0) {
+      const updatedPricedAmenities = [...pricedAmenities, { ...newPricedAmenity }];
+      setPricedAmenities(updatedPricedAmenities);
+      form.setValue("pricedAmenities", updatedPricedAmenities);
+      setNewPricedAmenity({
+        name: "",
+        price: 0,
+        description: ""
+      });
+      setIsAddPricedAmenityOpen(false);
+    }
+  };
+
+  const removePricedAmenity = (index: number) => {
+    const updatedPricedAmenities = pricedAmenities.filter((_, i) => i !== index);
+    setPricedAmenities(updatedPricedAmenities);
+    form.setValue("pricedAmenities", updatedPricedAmenities);
   };
 
   return (
@@ -133,6 +172,114 @@ export function AmenitiesSection({ control, form }: AmenitiesSectionProps) {
           </div>
         )}
       </div>
+
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-medium">Comodidades com valores adicionais</h4>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddPricedAmenityOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" /> Adicionar
+          </Button>
+        </div>
+        
+        {pricedAmenities.length > 0 ? (
+          <div className="space-y-2">
+            {pricedAmenities.map((amenity, index) => (
+              <div 
+                key={index}
+                className="border rounded-md p-3 flex justify-between items-center"
+              >
+                <div>
+                  <div className="font-medium">{amenity.name}</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <DollarSign className="h-3 w-3 mr-1" />
+                    {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(amenity.price)}
+                  </div>
+                  {amenity.description && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {amenity.description}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removePricedAmenity(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">
+            Adicione comodidades com valores adicionais que podem ser contratados junto com o espaço.
+          </div>
+        )}
+      </div>
+
+      <Dialog open={isAddPricedAmenityOpen} onOpenChange={setIsAddPricedAmenityOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar comodidade com valor</DialogTitle>
+            <DialogDescription>
+              Adicione uma comodidade ou serviço com valor adicional que será cobrado junto com a reserva.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="amenity-name">Nome da comodidade</Label>
+              <Input
+                id="amenity-name"
+                placeholder="Ex: DJ"
+                value={newPricedAmenity.name}
+                onChange={(e) => setNewPricedAmenity({...newPricedAmenity, name: e.target.value})}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amenity-price">Valor (R$)</Label>
+              <Input
+                id="amenity-price"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={newPricedAmenity.price}
+                onChange={(e) => setNewPricedAmenity({...newPricedAmenity, price: parseFloat(e.target.value) || 0})}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amenity-description">Descrição (opcional)</Label>
+              <Input
+                id="amenity-description"
+                placeholder="Descreva detalhes sobre esta comodidade"
+                value={newPricedAmenity.description}
+                onChange={(e) => setNewPricedAmenity({...newPricedAmenity, description: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddPricedAmenityOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={addPricedAmenity}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </FormSection>
   );
 }

@@ -52,6 +52,17 @@ export const BookingDateSelector = ({
 
     // If hourly booking, just set the date
     if (bookingType === 'hourly') {
+      // Check if date is at least 2 days in the future and available
+      if (isBefore(newDate, minDate)) {
+        toast.error("Somente datas a partir de 2 dias no futuro podem ser reservadas");
+        return;
+      }
+      
+      if (!isDateAvailable(newDate)) {
+        toast.error("Esta data não está disponível para reserva");
+        return;
+      }
+      
       setDate(newDate);
       setSelectedDays(1);
       return;
@@ -59,6 +70,17 @@ export const BookingDateSelector = ({
 
     // For daily bookings
     if (!date) {
+      // Check if date is at least 2 days in the future and available
+      if (isBefore(newDate, minDate)) {
+        toast.error("Somente datas a partir de 2 dias no futuro podem ser reservadas");
+        return;
+      }
+      
+      if (!isDateAvailable(newDate)) {
+        toast.error("Esta data não está disponível para reserva");
+        return;
+      }
+      
       setDate(newDate);
       return;
     }

@@ -18,7 +18,7 @@ export const useSpaceDetail = (id: string | undefined) => {
       try {
         const { data, error } = await supabase
           .from('spaces')
-          .select('*')
+          .select('*, custom_amenities')
           .eq('id', id)
           .single();
           

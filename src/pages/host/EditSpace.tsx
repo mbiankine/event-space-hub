@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,6 +82,9 @@ const EditSpace = () => {
       const availabilityDates = values.availability.map(date => 
         date instanceof Date ? date.toISOString().split('T')[0] : date
       );
+
+      // Prepare all amenities
+      const allAmenities = values.amenities.concat(values.customAmenities || []);
       
       // Update space data
       const { error } = await supabase
@@ -94,7 +98,8 @@ const EditSpace = () => {
           space_type: values.spaceType,
           pricing_type: values.pricingType,
           location: values.location,
-          amenities: values.amenities.concat(values.customAmenities || []),
+          amenities: allAmenities,
+          custom_amenities: values.pricedAmenities || [],
           availability: availabilityDates,
           images: imagePaths,
           updated_at: new Date().toISOString()
@@ -136,6 +141,7 @@ const EditSpace = () => {
     location: space?.location || {},
     amenities: space?.amenities || [],
     customAmenities: [],
+    pricedAmenities: space?.custom_amenities || [],
     availability: space?.availability?.map((dateStr: string) => new Date(dateStr)) || [],
     images: space?.images || []
   };

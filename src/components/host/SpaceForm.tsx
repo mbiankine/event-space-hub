@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { toast } from "sonner"; // Add this import
+import { toast } from "sonner";
 
 // Import refactored components
 import { BasicInfoSection } from './forms/BasicInfoSection';
@@ -49,6 +49,13 @@ const spaceFormSchema = z.object({
   }),
   amenities: z.array(z.string()),
   customAmenities: z.array(z.string()).optional(),
+  pricedAmenities: z.array(
+    z.object({
+      name: z.string(),
+      price: z.number().positive(),
+      description: z.string().optional()
+    })
+  ).optional(),
   availability: z.array(z.date()),
   images: z.array(z.any()).optional(),
 });
@@ -82,6 +89,7 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
       spaceType: "",
       amenities: [],
       customAmenities: [],
+      pricedAmenities: [],
       availability: [],
       images: [],
     },
