@@ -13,10 +13,12 @@ import Analytics from '@/pages/host/Analytics';
 import Settings from '@/pages/host/Settings';
 import HostDashboard from '@/pages/host/Dashboard';
 import ClientDashboard from '@/pages/client/Dashboard';
+import AdminDashboard from '@/pages/admin/Dashboard';
 import Index from '@/pages/Index';
 import SpaceDetail from '@/pages/SpaceDetail';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
+import AdminLogin from '@/pages/admin/Login';
 import ReservationSuccess from '@/pages/ReservationSuccess';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { StorageInit } from '@/components/storage/StorageInit';
@@ -36,6 +38,9 @@ function App() {
             {/* Auth routes */}
             <Route path="/auth/login" element={<Login />} />
             <Route path="/auth/register" element={<Register />} />
+            
+            {/* Admin auth route */}
+            <Route path="/admin/login" element={<AdminLogin />} />
             
             {/* Reservation success route */}
             <Route path="/reservas/sucesso" element={<ReservationSuccess />} />
@@ -82,6 +87,12 @@ function App() {
             <Route 
               path="/host/settings" 
               element={<ProtectedRoute requiredRole="host"><Settings /></ProtectedRoute>} 
+            />
+            
+            {/* Protected admin routes */}
+            <Route 
+              path="/admin/dashboard" 
+              element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} 
             />
             
             {/* Catch-all route */}
