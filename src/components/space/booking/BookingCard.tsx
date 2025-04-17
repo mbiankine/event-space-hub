@@ -48,6 +48,50 @@ export function BookingCard({
   const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = React.useState(false);
+  const [selectedDateRange, setSelectedDateRange] = React.useState<Date[]>([]);
+  
+  // Reset days when switching booking types
+  React.useEffect(() => {
+    if (bookingType === 'hourly') {
+      setSelectedDays(1);
+    }
+  }, [bookingType, setSelectedDays]);
+  
+  // Update date range when date changes
+  React.useEffect(() => {
+    if (date && bookingType === 'daily' && selectedDays > 1) {
+      calculatePossibleDateRange(date);
+    } else {
+      setSelectedDateRange(date ? [date] : []);
+    }
+  }, [date, selectedDays, bookingType, unavailableDates]);
+  
+  const calculatePossibleDateRange = (startDate: Date) => {
+    if (!startDate) return;
+    
+    const range: Date[] = [startDate];
+    let canAddMore = true;
+    let currentDay = 1;
+    
+    while (canAddMore && currentDay < selectedDays) {
+      const nextDate = new Date(startDate);
+      nextDate.setDate(nextDate.getDate() + currentDay);
+      
+      if (isDateAvailable(nextDate)) {
+        range.push(nextDate);
+        currentDay++;
+      } else {
+        canAddMore = false;
+        setSelectedDays(range.length);
+      }
+    }
+    
+    setSelectedDateRange(range);
+  };
+  
+  const totalPrice = bookingType === 'hourly' ? 
+    (space.hourly_price || 0) * selectedHours : 
+    space.price * selectedDays;
 
   const handleReserveClick = async () => {
     if (!user) {
@@ -63,6 +107,7 @@ export function BookingCard({
       if (!bookingResult || !bookingResult.success) {
         throw new Error('Falha ao criar reserva');
       }
+      
     } catch (error: any) {
       console.error('Booking error:', error);
       setPaymentError(error.message || 'Erro ao processar a reserva. Por favor, tente novamente.');
@@ -98,7 +143,7 @@ export function BookingCard({
             date={date}
             setDate={setDate}
             isDateAvailable={isDateAvailable}
-            selectedDateRange={[]}
+            selectedDateRange={selectedDateRange}
             selectedDays={selectedDays}
             setSelectedDays={setSelectedDays}
             bookingType={bookingType}
@@ -126,9 +171,7 @@ export function BookingCard({
             hourlyPrice={space.hourly_price}
             selectedHours={selectedHours}
             selectedDays={selectedDays}
-            totalPrice={bookingType === 'hourly' ? 
-              (space.hourly_price || 0) * selectedHours : 
-              space.price * selectedDays}
+            totalPrice={totalPrice}
           />
         </CardContent>
         <CardFooter>
