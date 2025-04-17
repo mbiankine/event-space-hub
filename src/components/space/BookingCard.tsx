@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, addHours, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -12,8 +13,9 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/auth/AuthContext';
+import { useStripeConfig } from '@/hooks/useStripeConfig';
 
 interface BookingCardProps {
   space: any;
@@ -28,7 +30,7 @@ interface BookingCardProps {
   bookingType: "hourly" | "daily";
   setBookingType: (type: "hourly" | "daily") => void;
   isDateAvailable: (date: Date) => boolean;
-  handleBookNow: () => Promise<{ success: boolean }> | void;
+  handleBookNow: () => Promise<{ success: boolean }>;
 }
 
 export function BookingCard({
@@ -52,6 +54,7 @@ export function BookingCard({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
+  const [isStripeConfigMissing, setIsStripeConfigMissing] = useState(false);
   
   // Calculate total price based on pricing type and booking type
   const calculatePrice = () => {
@@ -121,8 +124,7 @@ export function BookingCard({
 
       // Create booking record first
       const bookingResult = await handleBookNow();
-      // Fix: Check if bookingResult exists and has success property before accessing it
-      if (!bookingResult || (bookingResult && !bookingResult.success)) {
+      if (!bookingResult || !bookingResult.success) {
         throw new Error('Falha ao criar reserva');
       }
       
@@ -143,6 +145,19 @@ export function BookingCard({
       if (error) {
         console.error('Error creating checkout session:', error);
         throw new Error(error.message || 'Erro ao processar o pagamento');
+      }
+      
+      // Check if there's an error message in the response
+      if (data?.error) {
+        console.error('Error from create-checkout function:', data.error);
+        
+        // Check if the error is related to missing Stripe configuration
+        if (data.error.includes('STRIPE_SECRET_KEY is not configured')) {
+          setIsStripeConfigMissing(true);
+          throw new Error('Configuração do Stripe não foi encontrada. Por favor, contate o administrador.');
+        } else {
+          throw new Error(data.error);
+        }
       }
       
       // Redirect to Stripe Checkout
@@ -355,9 +370,19 @@ export function BookingCard({
               {paymentError}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
+          {isStripeConfigMissing ? (
+            <div>
+              <p className="mb-4 text-amber-600">
+                O sistema de pagamento não está configurado corretamente. Esta é uma mensagem para administradores.
+              </p>
+              <p className="text-sm text-gray-500">
+                Administradores precisam configurar a chave secreta do Stripe nas configurações do projeto.
+              </p>
+            </div>
+          ) : null}
+          <DialogFooter>
             <Button onClick={() => setIsErrorDialogOpen(false)}>Fechar</Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

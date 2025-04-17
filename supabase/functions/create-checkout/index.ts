@@ -48,7 +48,30 @@ serve(async (req) => {
     // Get Stripe secret key from environment variables
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY is not configured");
+      console.error("STRIPE_SECRET_KEY is not configured in edge function secrets");
+      return new Response(
+        JSON.stringify({
+          error: "STRIPE_SECRET_KEY is not configured. Please add your Stripe secret key to the edge function secrets."
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
+      );
+    }
+
+    // Validate Stripe key format
+    if (!stripeSecretKey.startsWith('sk_')) {
+      console.error("Invalid STRIPE_SECRET_KEY format");
+      return new Response(
+        JSON.stringify({
+          error: "Invalid STRIPE_SECRET_KEY format. It should start with 'sk_'."
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
+      );
     }
 
     // Initialize Stripe
