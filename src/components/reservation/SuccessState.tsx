@@ -19,7 +19,9 @@ export const SuccessState = ({ bookingId, spaceTitle }: SuccessStateProps) => {
       
       {spaceTitle && (
         <p className="text-lg text-muted-foreground mb-6">
-          Sua reserva para <span className="font-medium block mt-1">{spaceTitle}</span> foi confirmada.
+          Sua reserva para 
+          <span className="font-medium block mt-3 mb-1">{spaceTitle}</span> 
+          foi confirmada.
         </p>
       )}
       

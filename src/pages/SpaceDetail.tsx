@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -23,6 +24,7 @@ import { AuthDialog } from "@/components/space/AuthDialog";
 import { BookingFormModal } from "@/components/space/BookingFormModal";
 import { useStripeConfig } from "@/hooks/useStripeConfig";
 import { InquiryForm } from "@/components/space/InquiryForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const bookingFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -391,6 +393,21 @@ const SpaceDetail = () => {
             <Separator className="my-6" />
             
             <SpaceAmenities amenities={space.amenities || []} />
+            
+            <Separator className="my-6" />
+            
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Enviar mensagem ao anfitrião</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <InquiryForm 
+                  hostId={space.host_id}
+                  spaceId={space.id}
+                  spaceTitle={space.title}
+                />
+              </CardContent>
+            </Card>
           </div>
           
           <div className="space-y-6">
@@ -408,12 +425,6 @@ const SpaceDetail = () => {
               setBookingType={setBookingType}
               isDateAvailable={isDateAvailable}
               handleBookNow={handleBookNow}
-            />
-            
-            <InquiryForm 
-              hostId={space.host_id}
-              spaceId={space.id}
-              spaceTitle={space.title}
             />
           </div>
         </div>

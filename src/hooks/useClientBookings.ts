@@ -46,14 +46,17 @@ export const useClientBookings = (user: User | null) => {
           .order('booking_date', { ascending: true });
         
         if (currentError) throw currentError;
+
+        console.log("Current bookings data:", currentBookingsData);
         
         // Format current bookings
         const formattedCurrentBookings = currentBookingsData.map((booking) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
-          images: booking.spaces?.images,
-          location: booking.spaces?.location,
-          host_id: booking.spaces?.host_id || booking.host_id
+          images: booking.spaces?.images || [],
+          location: booking.spaces?.location || booking.location,
+          host_id: booking.spaces?.host_id || booking.host_id,
+          payment_method: booking.payment_method || 'Não informado'
         }));
         
         // Get past bookings
@@ -78,9 +81,10 @@ export const useClientBookings = (user: User | null) => {
         const pastBookingsFormatted = pastBookingsData.map((booking) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
-          images: booking.spaces?.images,
-          location: booking.spaces?.location,
-          host_id: booking.spaces?.host_id || booking.host_id
+          images: booking.spaces?.images || [],
+          location: booking.spaces?.location || booking.location,
+          host_id: booking.spaces?.host_id || booking.host_id,
+          payment_method: booking.payment_method || 'Não informado'
         }));
         
         if (isMounted) {

@@ -64,6 +64,8 @@ const BookingDetails = () => {
           }
         }
         
+        console.log("Booking data:", data);
+        
         setBooking({
           ...data,
           space_title: data.spaces?.title || data.space_title,
@@ -167,7 +169,7 @@ const BookingDetails = () => {
     }
   };
   
-  const getPaymentMethodText = (method: string | null) => {
+  const getPaymentMethodText = (method: string | null | undefined) => {
     if (!method) return 'Não informado';
     
     switch (method.toLowerCase()) {
