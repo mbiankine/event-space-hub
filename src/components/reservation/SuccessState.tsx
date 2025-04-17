@@ -1,46 +1,46 @@
 
+import React from 'react';
+import { Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SuccessStateProps {
   bookingId: string;
   spaceTitle?: string;
 }
 
-export function SuccessState({ bookingId, spaceTitle }: SuccessStateProps) {
+export const SuccessState = ({ bookingId, spaceTitle }: SuccessStateProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col items-center">
-          <CheckCircle className="h-24 w-24 text-green-500 mb-4" />
-          <CardTitle className="text-2xl text-center">Reserva Confirmada!</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-center">
-          <p className="mb-4">
-            Sua reserva foi processada com sucesso. Enviamos um e-mail de confirmação com todos os detalhes.
-          </p>
-          <p className="font-medium">
-            Código da reserva: {bookingId}
-          </p>
-          {spaceTitle && (
-            <p className="mt-2 text-muted-foreground">
-              Espaço: {spaceTitle}
-            </p>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-center gap-4">
-        <Button variant="outline" asChild>
-          <Link to="/">Voltar ao Início</Link>
+    <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto py-12">
+      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+        <Check className="h-8 w-8 text-green-600" />
+      </div>
+      <h1 className="text-2xl font-bold mb-4">Pagamento confirmado!</h1>
+      
+      {spaceTitle && (
+        <p className="text-lg text-muted-foreground mb-6">
+          Sua reserva para <span className="font-medium">{spaceTitle}</span> foi confirmada.
+        </p>
+      )}
+      
+      <p className="text-muted-foreground mb-8">
+        Enviamos um comprovante para o seu e-mail. 
+        Você pode ver os detalhes da sua reserva no seu painel.
+      </p>
+      
+      <div className="space-y-4 w-full">
+        <Button asChild className="w-full">
+          <Link to={`/client/bookings/${bookingId}`}>
+            Ver detalhes da reserva
+          </Link>
         </Button>
-        <Button asChild>
-          <Link to="/client/dashboard">Minhas Reservas</Link>
+        
+        <Button asChild variant="outline" className="w-full">
+          <Link to="/client/dashboard">
+            Voltar para o Dashboard
+          </Link>
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
-}
+};

@@ -7,6 +7,7 @@ interface BookingDetails {
   id: string;
   status: string;
   space_title?: string;
+  payment_method?: string;
 }
 
 export function usePaymentVerification(sessionId: string | null) {
@@ -28,7 +29,7 @@ export function usePaymentVerification(sessionId: string | null) {
         // First, check if we already have a booking with this payment_intent
         const { data: existingBooking, error: existingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title, client_id')
+          .select('id, status, space_title, client_id, payment_status, payment_method')
           .eq('payment_intent', sessionId)
           .maybeSingle();
         
@@ -40,10 +41,29 @@ export function usePaymentVerification(sessionId: string | null) {
         // If we found an existing booking, return it
         if (existingBooking) {
           console.log("Found existing booking with this payment intent:", existingBooking.id);
+          
+          // If payment is recorded but status isn't confirmed yet, update it
+          if (existingBooking.payment_status === 'paid' && existingBooking.status !== 'confirmed') {
+            const { error: updateError } = await supabase
+              .from('bookings')
+              .update({ 
+                status: 'confirmed',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingBooking.id);
+              
+            if (updateError) {
+              console.error("Error updating booking status:", updateError);
+            } else {
+              existingBooking.status = 'confirmed';
+            }
+          }
+          
           setBookingDetails({
             id: existingBooking.id,
             status: existingBooking.status,
-            space_title: existingBooking.space_title
+            space_title: existingBooking.space_title,
+            payment_method: existingBooking.payment_method
           });
           return;
         }
@@ -61,7 +81,7 @@ export function usePaymentVerification(sessionId: string | null) {
         // Look for the most recent pending booking for this user
         const { data: pendingBookings, error: pendingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title, payment_intent, client_id')
+          .select('id, status, space_title, payment_intent, client_id, payment_method')
           .eq('payment_status', 'pending')
           .eq('client_id', user?.id)
           .is('payment_intent', null)
@@ -83,6 +103,7 @@ export function usePaymentVerification(sessionId: string | null) {
               payment_status: 'paid',
               status: 'confirmed', // Always set status to confirmed when payment is successful
               payment_intent: sessionId,
+              payment_method: 'card', // Default payment method
               updated_at: new Date().toISOString()
             })
             .eq('id', booking.id);
@@ -95,7 +116,8 @@ export function usePaymentVerification(sessionId: string | null) {
           setBookingDetails({
             id: booking.id,
             status: 'confirmed',
-            space_title: booking.space_title
+            space_title: booking.space_title,
+            payment_method: 'card'
           });
           
           toast.success('Pagamento confirmado com sucesso!');
@@ -103,7 +125,8 @@ export function usePaymentVerification(sessionId: string | null) {
           console.log("No related booking found, showing generic confirmation");
           setBookingDetails({
             id: sessionId.substring(0, 8),
-            status: 'confirmed'
+            status: 'confirmed',
+            payment_method: 'card'
           });
         }
       } catch (error: any) {

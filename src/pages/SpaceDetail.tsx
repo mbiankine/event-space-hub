@@ -22,6 +22,7 @@ import { BookingCard } from "@/components/space/BookingCard";
 import { AuthDialog } from "@/components/space/AuthDialog";
 import { BookingFormModal } from "@/components/space/BookingFormModal";
 import { useStripeConfig } from "@/hooks/useStripeConfig";
+import { InquiryForm } from "@/components/space/InquiryForm";
 
 const bookingFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -392,7 +393,7 @@ const SpaceDetail = () => {
             <SpaceAmenities amenities={space.amenities || []} />
           </div>
           
-          <div>
+          <div className="space-y-6">
             <BookingCard 
               space={space}
               date={date}
@@ -407,6 +408,12 @@ const SpaceDetail = () => {
               setBookingType={setBookingType}
               isDateAvailable={isDateAvailable}
               handleBookNow={handleBookNow}
+            />
+            
+            <InquiryForm 
+              hostId={space.host_id}
+              spaceId={space.id}
+              spaceTitle={space.title}
             />
           </div>
         </div>

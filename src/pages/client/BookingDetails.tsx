@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -166,6 +167,21 @@ const BookingDetails = () => {
     }
   };
   
+  const getPaymentMethodText = (method: string | null) => {
+    if (!method) return 'Não informado';
+    
+    switch (method.toLowerCase()) {
+      case 'card':
+        return 'Cartão de crédito';
+      case 'pix':
+        return 'PIX';
+      case 'boleto':
+        return 'Boleto';
+      default:
+        return method;
+    }
+  };
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -238,13 +254,17 @@ const BookingDetails = () => {
           <div className="lg:col-span-2">
             <Card className="mb-6">
               <div className="aspect-video overflow-hidden">
-                <img 
-                  src={booking.images && booking.images.length > 0 
-                    ? booking.images[0] 
-                    : 'https://images.unsplash.com/photo-1605774337664-7a846e9cdf17?w=800&auto=format&fit=crop'}
-                  alt={booking.space_title}
-                  className="w-full h-full object-cover"
-                />
+                {booking.images && booking.images.length > 0 ? (
+                  <img 
+                    src={booking.images[0]} 
+                    alt={booking.space_title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500">Sem imagem disponível</span>
+                  </div>
+                )}
               </div>
               <CardHeader>
                 <CardTitle>{booking.space_title}</CardTitle>
@@ -318,6 +338,10 @@ const BookingDetails = () => {
                         <span>{formatCurrency(booking.service_fee)}</span>
                       </div>
                     )}
+                    <div className="flex justify-between">
+                      <span>Forma de pagamento</span>
+                      <span>{getPaymentMethodText(booking.payment_method)}</span>
+                    </div>
                     <Separator />
                     <div className="flex justify-between font-medium">
                       <span>Total</span>
