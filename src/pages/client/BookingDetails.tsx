@@ -4,13 +4,14 @@ import { useParams, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, Users, User, CreditCard, MessageCircle, ArrowLeft } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { ArrowLeft, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { MessagesThread } from '@/components/client/MessagesThread';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import BookingHeader from '@/components/client/booking/BookingHeader';
+import BookingInfo from '@/components/client/booking/BookingInfo';
+import PaymentDetails from '@/components/client/booking/PaymentDetails';
 
 const BookingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,7 +51,6 @@ const BookingDetails = () => {
           throw new Error('Reserva não encontrada');
         }
         
-        // If payment is paid but status is still pending, update to confirmed
         if (data.payment_status === 'paid' && data.status === 'pending') {
           const { error: updateError } = await supabase
             .from('bookings')
@@ -63,8 +63,6 @@ const BookingDetails = () => {
             data.status = 'confirmed';
           }
         }
-        
-        console.log("Booking data:", data);
         
         setBooking({
           ...data,
@@ -85,104 +83,7 @@ const BookingDetails = () => {
     };
     
     fetchBookingDetails();
-    
-    // Set up a subscription for real-time updates
-    const channel = supabase
-      .channel('booking-updates')
-      .on('postgres_changes', 
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'bookings',
-          filter: `id=eq.${id}` 
-        }, 
-        () => {
-          fetchBookingDetails();
-        }
-      )
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [id, user]);
-  
-  // Format date function
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    };
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', options);
-  };
-  
-  // Format currency function
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
-  
-  const getAddress = (location: any) => {
-    if (!location) return 'Endereço indisponível';
-    
-    if (typeof location === 'string') {
-      try {
-        location = JSON.parse(location);
-      } catch (e) {
-        return 'Endereço indisponível';
-      }
-    }
-    
-    if (location.address) return location.address;
-    if (location.street) {
-      return `${location.street}${location.number ? ', ' + location.number : ''}${location.city && location.state ? ' - ' + location.city + ', ' + location.state : ''}`;
-    }
-    
-    if (location.city && location.state) {
-      return `${location.city}, ${location.state}`;
-    }
-    
-    return 'Endereço indisponível';
-  };
-  
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Pago</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
-    }
-  };
-  
-  const getBookingStatusBadge = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Confirmado</Badge>;
-      case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Cancelado</Badge>;
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
-    }
-  };
-  
-  const getPaymentMethodText = (method: string | null | undefined) => {
-    if (!method) return 'Não informado';
-    
-    switch (method.toLowerCase()) {
-      case 'card':
-        return 'Cartão de crédito';
-      case 'pix':
-        return 'PIX';
-      case 'boleto':
-        return 'Boleto';
-      default:
-        return method;
-    }
-  };
   
   if (isLoading) {
     return (
@@ -254,114 +155,13 @@ const BookingDetails = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Card className="mb-6">
-              <div className="aspect-video overflow-hidden">
-                {booking.images && booking.images.length > 0 ? (
-                  <img 
-                    src={booking.images[0]} 
-                    alt={booking.space_title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-500">Sem imagem disponível</span>
-                  </div>
-                )}
-              </div>
-              <CardHeader>
-                <CardTitle>{booking.space_title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {booking.description && (
-                    <p className="text-muted-foreground">{booking.description}</p>
-                  )}
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center">
-                        <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span>{formatDate(booking.booking_date)}</span>
-                      </div>
-                      {(booking.start_time && booking.end_time) && (
-                        <div className="flex items-center">
-                          <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{booking.start_time} - {booking.end_time}</span>
-                        </div>
-                      )}
-                      {booking.guest_count && (
-                        <div className="flex items-center">
-                          <Users className="h-5 w-5 mr-2 text-muted-foreground" />
-                          <span>{booking.guest_count} convidados</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center">
-                        <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span>{getAddress(booking.location)}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <User className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span>Anfitrião: {booking.host_name || 'Anfitrião'}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <CreditCard className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span className="inline-flex items-center">
-                          Pagamento: {getPaymentStatusBadge(booking.payment_status)}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <CreditCard className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span className="inline-flex items-center">
-                          Status: {getBookingStatusBadge(booking.status)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <div className="space-y-2">
-                    <h3 className="font-medium">Detalhes do Pagamento</h3>
-                    <div className="flex justify-between">
-                      <span>Valor do espaço</span>
-                      <span>{booking.space_price ? formatCurrency(booking.space_price) : '-'}</span>
-                    </div>
-                    {booking.additional_services_price > 0 && (
-                      <div className="flex justify-between">
-                        <span>Serviços adicionais</span>
-                        <span>{formatCurrency(booking.additional_services_price)}</span>
-                      </div>
-                    )}
-                    {booking.service_fee > 0 && (
-                      <div className="flex justify-between">
-                        <span>Taxa de serviço</span>
-                        <span>{formatCurrency(booking.service_fee)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span>Forma de pagamento</span>
-                      <span>{getPaymentMethodText(booking.payment_method)}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-medium">
-                      <span>Total</span>
-                      <span>{booking.total_price ? formatCurrency(booking.total_price) : '-'}</span>
-                    </div>
-                  </div>
-                  
-                  {booking.notes && (
-                    <>
-                      <Separator className="my-4" />
-                      <div>
-                        <h3 className="font-medium mb-2">Observações</h3>
-                        <p className="text-muted-foreground">{booking.notes}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
+            <Card>
+              <BookingHeader 
+                title={booking.space_title} 
+                images={booking.images} 
+              />
+              <BookingInfo booking={booking} />
+              <PaymentDetails booking={booking} />
             </Card>
           </div>
           
@@ -374,9 +174,6 @@ const BookingDetails = () => {
               />
             ) : (
               <Card>
-                <CardHeader>
-                  <CardTitle>Mensagens</CardTitle>
-                </CardHeader>
                 <CardContent className="text-center py-8">
                   <MessageCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p className="mb-4">As mensagens estarão disponíveis após o pagamento.</p>

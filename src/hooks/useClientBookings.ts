@@ -25,7 +25,6 @@ export const useClientBookings = (user: User | null) => {
       try {
         setIsLoading(true);
         setError(null);
-        console.log("Fetching bookings for user ID:", user.id);
         
         const today = new Date().toISOString().split('T')[0];
         
@@ -46,17 +45,15 @@ export const useClientBookings = (user: User | null) => {
           .order('booking_date', { ascending: true });
         
         if (currentError) throw currentError;
-
-        console.log("Current bookings data:", currentBookingsData);
         
         // Format current bookings
         const formattedCurrentBookings = currentBookingsData.map((booking) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
           images: booking.spaces?.images || [],
-          location: booking.spaces?.location || booking.location,
+          location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
-          payment_method: booking.payment_method || 'Não informado'
+          payment_method: booking.payment_method || 'card'
         }));
         
         // Get past bookings
@@ -82,18 +79,14 @@ export const useClientBookings = (user: User | null) => {
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
           images: booking.spaces?.images || [],
-          location: booking.spaces?.location || booking.location,
+          location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
-          payment_method: booking.payment_method || 'Não informado'
+          payment_method: booking.payment_method || 'card'
         }));
         
         if (isMounted) {
           setCurrentBookings(formattedCurrentBookings);
           setPastBookings(pastBookingsFormatted);
-          console.log("Fetched bookings:", {
-            current: formattedCurrentBookings.length || 0,
-            past: pastBookingsFormatted.length || 0
-          });
         }
       } catch (error: any) {
         console.error('Error fetching bookings:', error);
