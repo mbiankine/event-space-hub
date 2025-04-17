@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -7,6 +8,15 @@ import { ClientBookingsList } from '@/components/client/ClientBookingsList';
 import { DashboardHeader } from '@/components/client/DashboardHeader';
 import { FavoritesSection } from '@/components/client/FavoritesSection';
 import { useClientBookings } from '@/hooks/useClientBookings';
+import { Button } from "@/components/ui/button";
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent, 
+  CardFooter 
+} from "@/components/ui/card";
 
 const ClientDashboard = () => {
   const { user } = useAuth();
