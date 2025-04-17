@@ -42,11 +42,11 @@ const BookingDetail = () => {
           return;
         }
 
-        // Create a properly typed booking object with optional payment_method
+        // Create a properly typed booking object
         const tempBooking: Booking = {
           ...bookingData,
-          // Add payment_method if needed - it's optional in the Booking type
-          payment_method: bookingData.payment_method || 'card'
+          // Since payment_method might not exist in bookingData, provide a default
+          // or leave it undefined as it's optional in the Booking type
         };
 
         setBooking(tempBooking);
