@@ -34,10 +34,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { Booking } from "@/types/BookingTypes";
 
 const BookingStatus = ({ status }: { status: string }) => {
@@ -155,6 +153,12 @@ const HostBookings = () => {
     if (page > 1) setPage(page - 1);
   };
 
+  // Format date function to replace date-fns
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -204,9 +208,7 @@ const HostBookings = () => {
                           <TableCell className="font-medium">{booking.space_title || "Espaço"}</TableCell>
                           <TableCell>{booking.client_name || "Cliente"}</TableCell>
                           <TableCell>
-                            {booking.booking_date ? 
-                              format(new Date(booking.booking_date), "dd/MM/yyyy", {locale: ptBR}) : 
-                              "--/--/----"}
+                            {booking.booking_date ? formatDate(booking.booking_date) : "--/--/----"}
                           </TableCell>
                           <TableCell>R$ {booking.total_price?.toFixed(2) || "0,00"}</TableCell>
                           <TableCell>

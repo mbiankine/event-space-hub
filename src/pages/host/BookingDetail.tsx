@@ -1,91 +1,81 @@
 
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  FileText,
-  Loader2,
-  Mail,
-  MapPin,
-  MessageSquare,
-  Phone,
-  User,
-  Users,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronLeft, MessageSquare, CalendarIcon, Clock, Users, Banknote } from "lucide-react";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Separator } from "@/components/ui/separator";
 import { Booking } from "@/types/BookingTypes";
 
 const BookingDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [booking, setBooking] = useState<Booking | null>(null);
-  const [space, setSpace] = useState<any>(null);
-  const [client, setClient] = useState<any>(null);
+  const [space, setSpace] = useState<any | null>(null);
+  const [client, setClient] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !id) return;
-    
     const fetchBookingDetails = async () => {
+      if (!id || !user) return;
+
       setIsLoading(true);
       try {
-        // Fetch booking
+        // Fetch booking details
         const { data: bookingData, error: bookingError } = await supabase
           .from('bookings')
           .select('*')
           .eq('id', id)
           .eq('host_id', user.id)
           .single();
-          
-        if (bookingError) throw bookingError;
+
+        if (bookingError) {
+          throw bookingError;
+        }
+
         if (!bookingData) {
           toast.error('Reserva não encontrada');
-          navigate('/host/bookings');
           return;
         }
-        
-        setBooking(bookingData as Booking);
-        
-        // Fetch space
+
+        setBooking(bookingData);
+
+        // Fetch space details if space_id exists
         if (bookingData.space_id) {
-          const { data: spaceData } = await supabase
+          const { data: spaceData, error: spaceError } = await supabase
             .from('spaces')
             .select('*')
             .eq('id', bookingData.space_id)
             .single();
-            
-          setSpace(spaceData);
+
+          if (spaceError) {
+            console.error('Error fetching space:', spaceError);
+          } else {
+            setSpace(spaceData);
+          }
         }
-        
-        // Fetch client
+
+        // Fetch client details if client_id exists
         if (bookingData.client_id) {
-          const { data: clientData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', bookingData.client_id)
             .single();
-            
-          setClient(clientData);
+
+          if (profileError) {
+            console.error('Error fetching client profile:', profileError);
+          } else {
+            setClient(profileData);
+          }
         }
+
       } catch (error) {
         console.error('Error fetching booking details:', error);
         toast.error('Erro ao carregar detalhes da reserva');
@@ -93,23 +83,23 @@ const BookingDetail = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchBookingDetails();
-  }, [user, id, navigate]);
+  }, [id, user]);
 
   const handleUpdateStatus = async (newStatus: string) => {
-    if (!id) return;
-    
+    if (!booking || !user) return;
+
     try {
       const { error } = await supabase
         .from('bookings')
         .update({ status: newStatus })
-        .eq('id', id);
-        
+        .eq('id', booking.id)
+        .eq('host_id', user.id);
+
       if (error) throw error;
-      
-      // Update local state
-      setBooking(booking ? { ...booking, status: newStatus } : null);
+
+      setBooking({ ...booking, status: newStatus });
       toast.success(`Reserva ${newStatus === 'confirmed' ? 'confirmada' : 'atualizada'} com sucesso`);
     } catch (error) {
       console.error('Error updating booking status:', error);
@@ -117,225 +107,240 @@ const BookingDetail = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { text: string, className: string }> = {
-      pending: { text: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
-      confirmed: { text: 'Confirmada', className: 'bg-green-100 text-green-800' },
-      cancelled: { text: 'Cancelada', className: 'bg-red-100 text-red-800' },
-      completed: { text: 'Concluída', className: 'bg-blue-100 text-blue-800' },
+  // Format date function to replace date-fns
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Não definido";
+    
+    const options: Intl.DateTimeFormatOptions = { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
     };
     
-    const statusInfo = statusMap[status] || { text: 'Desconhecido', className: 'bg-gray-100 text-gray-800' };
-    
-    return (
-      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-        {statusInfo.text}
-      </span>
-    );
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', options);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64 md:col-span-2" />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Reserva não encontrada</CardTitle>
+              <CardDescription>A reserva solicitada não existe ou você não tem permissão para acessá-la.</CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Button asChild>
+                <Link to="/host/bookings">
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Voltar para reservas
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/host/bookings')}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para reservas
-          </Button>
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-            <h1 className="text-3xl font-bold">Detalhes da Reserva</h1>
-            {booking && (
-              <div className="mt-2 md:mt-0">
-                {getStatusBadge(booking.status || 'pending')}
-              </div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <Button variant="outline" size="sm" className="mb-4" asChild>
+              <Link to="/host/bookings">
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Voltar para reservas
+              </Link>
+            </Button>
+            <h1 className="text-3xl font-bold mb-2">Detalhes da Reserva</h1>
+            <p className="text-muted-foreground">{booking.space_title || "Espaço reservado"}</p>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Mensagens
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Conversa com {booking.client_name || "Cliente"}</SheetTitle>
+                  <SheetDescription>Envie mensagens sobre esta reserva</SheetDescription>
+                </SheetHeader>
+                <div className="h-full flex flex-col justify-center items-center">
+                  <p className="text-muted-foreground">Sistema de mensagens em desenvolvimento.</p>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {booking.status === 'pending' && (
+              <Button variant="default" onClick={() => handleUpdateStatus('confirmed')}>
+                Confirmar Reserva
+              </Button>
+            )}
+
+            {booking.status === 'confirmed' && (
+              <Button variant="default" onClick={() => handleUpdateStatus('completed')}>
+                Marcar como Concluída
+              </Button>
+            )}
+
+            {(booking.status === 'pending' || booking.status === 'confirmed') && (
+              <Button variant="destructive" onClick={() => handleUpdateStatus('cancelled')}>
+                Cancelar
+              </Button>
             )}
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : booking ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações da Reserva</CardTitle>
-                  <CardDescription>Detalhes do evento e reserva</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground mb-1">Espaço</h3>
-                      <p className="text-lg font-medium">{space?.title || booking.space_title || "Espaço"}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground mb-1">Tipo de Evento</h3>
-                      <p>{booking.event_type || "Não especificado"}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground mb-1">Data</h3>
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>
-                          {booking.booking_date ? 
-                            format(new Date(booking.booking_date), "dd 'de' MMMM 'de' yyyy", {locale: ptBR}) : 
-                            "Não especificada"}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground mb-1">Horário</h3>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{booking.start_time || "--:--"} - {booking.end_time || "--:--"}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground mb-1">Convidados</h3>
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{booking.guest_count || 0} pessoas</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-muted-foreground mb-1">Data da Reserva</h3>
-                      <p>
-                        {booking.created_at ? 
-                          format(new Date(booking.created_at), "dd/MM/yyyy", {locale: ptBR}) : 
-                          "--/--/----"}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <h3 className="font-medium text-sm text-muted-foreground mb-1">Observações</h3>
-                    <p className="text-sm">{booking.notes || "Nenhuma observação adicionada."}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Localização</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-start">
-                    <MapPin className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
-                    <p>{space?.address || "Endereço não disponível"}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pagamento</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Valor do espaço</span>
-                      <span>R$ {booking.space_price?.toFixed(2) || "0,00"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Serviços adicionais</span>
-                      <span>R$ {booking.additional_services_price?.toFixed(2) || "0,00"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Taxa de serviço</span>
-                      <span>R$ {booking.service_fee?.toFixed(2) || "0,00"}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-medium">
-                      <span>Valor total</span>
-                      <span>R$ {booking.total_price?.toFixed(2) || "0,00"}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Status do pagamento</span>
-                      <span className="font-medium text-green-600">
-                        {booking.payment_status === 'paid' ? 'Pago' : 'Pendente'}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cliente</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{client?.full_name || booking.client_name || "Cliente"}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{client?.username || booking.client_email || "Email não disponível"}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>{booking.client_phone || "Telefone não disponível"}</span>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Mensagem para o cliente
-                  </Button>
-                </CardFooter>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ações</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {booking.status === "pending" && (
-                    <Button onClick={() => handleUpdateStatus("confirmed")} className="w-full">
-                      Confirmar reserva
-                    </Button>
-                  )}
-                  {booking.status === "confirmed" && (
-                    <Button onClick={() => handleUpdateStatus("completed")} className="w-full">
-                      Marcar como concluída
-                    </Button>
-                  )}
-                  {(booking.status === "pending" || booking.status === "confirmed") && (
-                    <Button 
-                      onClick={() => handleUpdateStatus("cancelled")} 
-                      variant="outline" 
-                      className="w-full text-destructive hover:text-destructive"
-                    >
-                      Cancelar reserva
-                    </Button>
-                  )}
-                  <Button variant="outline" className="w-full">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Gerar recibo
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Booking info card */}
           <Card>
-            <CardContent className="py-10 text-center">
-              <p className="text-muted-foreground">Reserva não encontrada</p>
+            <CardHeader>
+              <CardTitle>Informações da Reserva</CardTitle>
+              <CardDescription>Detalhes desta reserva</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center">
+                <div className="bg-primary/10 p-2 rounded-full mr-3">
+                  <CalendarIcon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Data</p>
+                  <p className="font-medium">{formatDate(booking.booking_date)}</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-primary/10 p-2 rounded-full mr-3">
+                  <Clock className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Horário</p>
+                  <p className="font-medium">{booking.start_time || "--:--"} - {booking.end_time || "--:--"}</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-primary/10 p-2 rounded-full mr-3">
+                  <Users className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Convidados</p>
+                  <p className="font-medium">{booking.guest_count || 0} pessoas</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-primary/10 p-2 rounded-full mr-3">
+                  <Banknote className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="font-medium">R$ {booking.total_price?.toFixed(2) || "0,00"}</p>
+                </div>
+              </div>
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-1">Status</p>
+                <div className={`px-3 py-1 rounded-md text-center
+                  ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    booking.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'}`}
+                >
+                  {booking.status === 'confirmed' ? 'Confirmada' :
+                    booking.status === 'pending' ? 'Pendente' :
+                    booking.status === 'completed' ? 'Concluída' :
+                    booking.status === 'cancelled' ? 'Cancelada' :
+                    'Status desconhecido'}
+                </div>
+              </div>
+              {booking.event_type && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-1">Tipo de evento</p>
+                  <p>{booking.event_type}</p>
+                </div>
+              )}
+              {booking.notes && (
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-1">Observações</p>
+                  <p>{booking.notes}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
+
+          {/* Client and Space Info */}
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Informações do Cliente</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <p className="text-lg font-semibold">{booking.client_name || "Nome do Cliente"}</p>
+                {booking.client_email && <p className="text-muted-foreground">{booking.client_email}</p>}
+                {booking.client_phone && <p className="text-muted-foreground">{booking.client_phone}</p>}
+              </div>
+              
+              {client && client.bio && (
+                <div className="mb-6 bg-muted/30 p-4 rounded-md">
+                  <p className="text-sm text-muted-foreground mb-1">Sobre o cliente</p>
+                  <p>{client.bio}</p>
+                </div>
+              )}
+            </CardContent>
+            
+            {space && (
+              <>
+                <CardHeader className="border-t pt-6">
+                  <CardTitle>Informações do Espaço</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg font-semibold">{space.title}</p>
+                  <p className="text-muted-foreground line-clamp-2 mb-4">{space.description}</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Capacidade</p>
+                      <p className="font-medium">{space.capacity} pessoas</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Tipo</p>
+                      <p className="font-medium">{space.space_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Valor</p>
+                      <p className="font-medium">R$ {space.price}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </>
+            )}
+          </Card>
+        </div>
       </main>
       <Footer />
     </div>
