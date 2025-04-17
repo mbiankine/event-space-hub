@@ -1,16 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { toast } from 'sonner';
 import { Space } from '@/types/SpaceTypes';
 import { PageHeader } from '@/components/host/PageHeader';
 import { LoadingState } from '@/components/host/LoadingState';
 import { EmptyStateCard } from '@/components/host/EmptyStateCard';
 import { SpacesGrid } from '@/components/host/SpacesGrid';
+import { HostLayout } from '@/components/layouts/HostLayout';
 
 const ManageSpaces = () => {
   const [spaces, setSpaces] = useState<Space[]>([]);
@@ -61,24 +60,23 @@ const ManageSpaces = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
-        <PageHeader onAddClick={() => navigate('/host/spaces/new')} />
+    <HostLayout
+      title="Meus Espaços"
+      description="Gerencie os espaços que você disponibiliza"
+    >
+      <PageHeader onAddClick={() => navigate('/host/spaces/new')} />
 
-        {isLoading ? (
-          <LoadingState />
-        ) : spaces.length === 0 ? (
-          <EmptyStateCard onAddClick={() => navigate('/host/spaces/new')} />
-        ) : (
-          <SpacesGrid 
-            spaces={spaces} 
-            onDelete={handleDelete} 
-          />
-        )}
-      </main>
-      <Footer />
-    </div>
+      {isLoading ? (
+        <LoadingState />
+      ) : spaces.length === 0 ? (
+        <EmptyStateCard onAddClick={() => navigate('/host/spaces/new')} />
+      ) : (
+        <SpacesGrid 
+          spaces={spaces} 
+          onDelete={handleDelete} 
+        />
+      )}
+    </HostLayout>
   );
 };
 

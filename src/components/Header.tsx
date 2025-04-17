@@ -1,122 +1,89 @@
 
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Button } from "./ui/button";
+import React from "react";
+import { Link } from "react-router-dom";
+import { SearchBar } from "./SearchBar";
+import { useAuth } from "@/contexts/auth/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Globe, Menu, User } from "lucide-react";
-import { useAuth } from "@/contexts/auth/AuthContext";
+} from "@/components/ui/dropdown-menu";
+import { LogOut, User } from "lucide-react";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
-export function Header() {
-  const { user, profile, accountType, roles, signOut } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+export const Header = () => {
+  const { user, logout } = useAuth();
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const getUserInitials = () => {
+    if (!user || !user.email) return "U";
+    return user.email.charAt(0).toUpperCase();
   };
 
   return (
-    <header className="border-b sticky top-0 z-50 bg-white">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
-        {/* Logo */}
-        <Link to="/" className="flex items-center">
-          <span className="text-2xl font-bold text-eventspace-500">EventSpace</span>
+    <header className="border-b sticky top-0 bg-background z-10">
+      <div className="container flex items-center justify-between h-16 px-4 md:px-6">
+        <Link to="/" className="flex items-center gap-2">
+          <span className="text-xl font-bold text-primary">EventSpace</span>
         </Link>
 
-        {/* User Menu */}
+        <div className="hidden md:flex md:flex-1 md:justify-center md:px-4">
+          <SearchBar />
+        </div>
+
         <div className="flex items-center gap-4">
-          {!user && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full hidden md:flex"
-              onClick={() => navigate('/auth/register?type=host')}
-            >
-              Anuncie seu espaço
-            </Button>
-          )}
+          <ThemeSwitcher />
           
-          <Button variant="ghost" size="icon" className="rounded-full hidden md:flex">
-            <Globe className="h-4 w-4" />
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="rounded-full border-gray-300">
-                <Menu className="h-4 w-4 mr-2" />
-                <User className="h-4 w-4" />
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.avatar_url || ""} alt={user.email || ""} />
+                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to={user.role === "host" ? "/host/dashboard" : "/client/dashboard"} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sair</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/auth/login">Entrar</Link>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {user ? (
-                <>
-                  <DropdownMenuItem className="font-medium">
-                    {profile?.full_name || user.email}
-                    {accountType && (
-                      <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full">
-                        {accountType === 'client' ? 'Cliente' : accountType === 'host' ? 'Anfitrião' : 'Admin'}
-                      </span>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  
-                  {/* Cliente pode ver apenas o painel de cliente */}
-                  {(accountType === 'client' || roles.includes('client') || roles.includes('host')) && (
-                    <DropdownMenuItem onClick={() => handleNavigation('/client/dashboard')}>
-                      Painel de Cliente
-                    </DropdownMenuItem>
-                  )}
-                  
-                  {/* Anfitrião pode ver o painel de anfitrião E o de cliente */}
-                  {(accountType === 'host' || roles.includes('host')) && (
-                    <>
-                      <DropdownMenuItem onClick={() => handleNavigation('/host/dashboard')}>
-                        Painel de Anfitrião
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleNavigation('/host/spaces')}>
-                        Meus Espaços
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleNavigation('/host/spaces/new')}>
-                        Anunciar novo espaço
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  
-                  {accountType === 'admin' && (
-                    <DropdownMenuItem onClick={() => handleNavigation('/admin/dashboard')}>
-                      Painel de Admin
-                    </DropdownMenuItem>
-                  )}
-                  
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    Sair
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem onClick={() => handleNavigation('/auth/register')}>
-                    Registrar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleNavigation('/auth/login')}>
-                    Entrar
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleNavigation('/auth/register?type=host')}>
-                    Anuncie seu espaço
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>Ajuda</DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Button size="sm" asChild>
+                <Link to="/auth/register">Cadastrar</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>
   );
-}
+};

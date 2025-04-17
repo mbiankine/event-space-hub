@@ -1,15 +1,13 @@
 
 import React, { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { Space } from '@/types/SpaceTypes';
 import { Booking } from '@/types/BookingTypes';
-import { QuickMenu } from '@/components/host/QuickMenu';
-import { DashboardTabs } from '@/components/host/DashboardTabs';
 import { DashboardStats } from '@/components/host/DashboardStats';
+import { DashboardTabs } from '@/components/host/DashboardTabs';
 import { toast } from 'sonner';
+import { HostLayout } from "@/components/layouts/HostLayout";
 
 const HostDashboard = () => {
   const [spaces, setSpaces] = useState<Space[]>([]);
@@ -69,24 +67,17 @@ const HostDashboard = () => {
   }, [user]);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard do Anfitrião</h1>
-        
-        <DashboardStats stats={mockStats} />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <QuickMenu />
-          <DashboardTabs 
-            spaces={spaces.slice(0, 3)} 
-            bookings={bookings.slice(0, 5)}
-            isLoading={isLoading} 
-          />
-        </div>
-      </main>
-      <Footer />
-    </div>
+    <HostLayout 
+      title="Dashboard do Anfitrião" 
+      description="Gerencie seus espaços e reservas"
+    >
+      <DashboardStats stats={mockStats} />
+      <DashboardTabs 
+        spaces={spaces.slice(0, 3)} 
+        bookings={bookings.slice(0, 5)}
+        isLoading={isLoading} 
+      />
+    </HostLayout>
   );
 };
 

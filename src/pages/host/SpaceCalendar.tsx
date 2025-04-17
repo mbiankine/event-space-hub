@@ -1,8 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { toast } from 'sonner';
@@ -14,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Booking } from '@/types/BookingTypes';
 import { Space } from '@/types/SpaceTypes';
 import { ArrowLeft, Clock, Users } from 'lucide-react';
+import { HostLayout } from '@/components/layouts/HostLayout';
 
 // Add global CSS styles for the booking indicator
 const bookingIndicatorStyle = `
@@ -138,118 +137,102 @@ const SpaceCalendar = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8 flex items-center justify-center">
-          <LoadingState />
-        </main>
-        <Footer />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
-        <div className="flex items-center mb-4">
-          <Button variant="ghost" size="sm" className="rounded-full mr-4" onClick={() => navigate('/host/spaces')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{space?.title}</h1>
-            <p className="text-muted-foreground">Agenda de Reservas</p>
-          </div>
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex items-center mb-4">
+        <Button variant="ghost" size="sm" className="rounded-full mr-4" onClick={() => navigate('/host/spaces')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="col-span-1">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>Calendário</CardTitle>
+              <CardDescription>Selecione uma data para ver as reservas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="border rounded-md p-3 pointer-events-auto"
+                modifiers={{
+                  booked: (date) => hasBookingsOnDate(date),
+                }}
+                modifiersStyles={{
+                  booked: {
+                    fontWeight: 'bold',
+                    textDecoration: 'underline',
+                  },
+                }}
+              />
+            </CardContent>
+          </Card>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Calendário</CardTitle>
-                <CardDescription>Selecione uma data para ver as reservas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="border rounded-md p-3 pointer-events-auto"
-                  modifiers={{
-                    booked: (date) => hasBookingsOnDate(date),
-                  }}
-                  modifiersStyles={{
-                    booked: {
-                      fontWeight: 'bold',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                />
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="col-span-1 lg:col-span-2">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>
-                  Reservas para {selectedDate?.toLocaleDateString('pt-BR', { 
-                    day: '2-digit', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  })}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedDateBookings.length > 0 ? (
-                  <div className="space-y-4">
-                    {selectedDateBookings.map((booking) => (
-                      <Card key={booking.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between items-start">
-                            <CardTitle className="text-lg">{booking.client_name}</CardTitle>
-                            <Badge>{booking.status}</Badge>
+        <div className="col-span-1 lg:col-span-2">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle>
+                Reservas para {selectedDate?.toLocaleDateString('pt-BR', { 
+                  day: '2-digit', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedDateBookings.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedDateBookings.map((booking) => (
+                    <Card key={booking.id} className="border border-border">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg">{booking.client_name}</CardTitle>
+                          <Badge>{booking.status}</Badge>
+                        </div>
+                        <CardDescription>{booking.event_type || 'Evento'}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="pb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div className="flex items-center">
+                            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <span>{booking.start_time} - {booking.end_time}</span>
                           </div>
-                          <CardDescription>{booking.event_type || 'Evento'}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span>{booking.start_time} - {booking.end_time}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <span>{booking.guest_count} convidados</span>
-                            </div>
+                          <div className="flex items-center">
+                            <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <span>{booking.guest_count} convidados</span>
                           </div>
-                          {booking.notes && (
-                            <div className="mt-2 text-sm">
-                              <p className="text-muted-foreground">{booking.notes}</p>
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="pt-0">
-                          <Button variant="outline" size="sm" asChild className="w-full">
-                            <Link to={`/host/bookings/${booking.id}`}>Ver detalhes</Link>
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">Nenhuma reserva encontrada para esta data</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                        </div>
+                        {booking.notes && (
+                          <div className="mt-2 text-sm">
+                            <p className="text-muted-foreground">{booking.notes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                      <CardFooter className="pt-0">
+                        <Button variant="outline" size="sm" asChild className="w-full">
+                          <Link to={`/host/bookings/${booking.id}`}>Ver detalhes</Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Nenhuma reserva encontrada para esta data</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 };
