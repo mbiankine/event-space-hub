@@ -16,6 +16,16 @@ interface Location {
   state: string;
 }
 
+// Define a typed version of the space with location as we expect it
+interface SpaceWithLocation {
+  location: {
+    city: string;
+    state: string;
+    [key: string]: any; // Allow other location properties
+  };
+  [key: string]: any; // Allow other space properties
+}
+
 export const SearchBar = () => {
   const navigate = useNavigate();
   const [location, setLocation] = useState<Location | null>(null);
@@ -45,10 +55,10 @@ export const SearchBar = () => {
       if (error) throw error;
       
       if (data) {
-        // Extract unique cities from locations
+        // Extract unique cities from locations, properly typed
         const uniqueCities = Array.from(
           new Map(
-            data.map(item => {
+            data.map((item: SpaceWithLocation) => {
               const cityKey = `${item.location.city}-${item.location.state}`;
               return [cityKey, { city: item.location.city, state: item.location.state }];
             })
@@ -169,6 +179,60 @@ export const SearchBar = () => {
     if (newValue >= 1 && newValue <= 100) {
       setGuestCount(newValue);
     }
+  };
+
+  const getUserLocation = () => {
+    setIsLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          // Use reverse geocoding API to get city/state
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&accept-language=pt-BR`)
+            .then(response => response.json())
+            .then(data => {
+              const city = data.address.city || data.address.town || data.address.village;
+              const state = data.address.state;
+              
+              if (city && state) {
+                setLocation({ city, state });
+              }
+              setIsLoading(false);
+            })
+            .catch(err => {
+              console.error("Erro ao obter localização:", err);
+              setIsLoading(false);
+            });
+        },
+        error => {
+          console.error("Erro de geolocalização:", error);
+          setIsLoading(false);
+        }
+      );
+    } else {
+      console.error("Geolocalização não suportada");
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    // Construct query parameters
+    const params = new URLSearchParams();
+    
+    if (location) {
+      params.append('city', location.city);
+      params.append('state', location.state);
+    }
+    
+    if (date) {
+      params.append('date', format(date, 'yyyy-MM-dd'));
+    }
+    
+    if (guestCount > 0) {
+      params.append('guests', guestCount.toString());
+    }
+    
+    // Navigate to search results page
+    navigate(`/?${params.toString()}`);
   };
 
   return (
