@@ -3,7 +3,7 @@ import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 
 const registerSchema = z.object({
   fullName: z.string().min(3, 'Nome completo deve ter pelo menos 3 caracteres'),
@@ -31,7 +32,8 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
   const { signUp, isLoading } = useAuth();
-  const [userType, setUserType] = React.useState<'client' | 'host'>('client');
+  const [accountType, setAccountType] = React.useState<'client' | 'host'>('client');
+  const navigate = useNavigate();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -44,7 +46,13 @@ const Register = () => {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
-    await signUp(data.email, data.password, data.fullName, userType);
+    try {
+      await signUp(data.email, data.password, data.fullName, accountType);
+      toast.success(`Conta de ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} criada com sucesso!`);
+      navigate('/auth/login');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao criar conta');
+    }
   };
 
   return (
@@ -64,7 +72,7 @@ const Register = () => {
         
         <Tabs 
           defaultValue="client" 
-          onValueChange={(value) => setUserType(value as 'client' | 'host')}
+          onValueChange={(value) => setAccountType(value as 'client' | 'host')}
           className="w-full"
         >
           <TabsList className="grid grid-cols-2 w-full">
@@ -73,12 +81,12 @@ const Register = () => {
           </TabsList>
           <TabsContent value="client" className="mt-4">
             <p className="text-sm text-gray-500 mb-4">
-              Crie uma conta para encontrar e reservar espaços para seus eventos
+              Crie uma conta como Cliente para encontrar e reservar espaços para seus eventos
             </p>
           </TabsContent>
           <TabsContent value="host" className="mt-4">
             <p className="text-sm text-gray-500 mb-4">
-              Crie uma conta para anunciar e gerenciar seus espaços para eventos
+              Crie uma conta como Anfitrião para anunciar e gerenciar seus espaços para eventos
             </p>
           </TabsContent>
         </Tabs>
@@ -146,7 +154,7 @@ const Register = () => {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Registrando...' : `Registrar como ${userType === 'client' ? 'Cliente' : 'Anfitrião'}`}
+                {isLoading ? 'Registrando...' : `Registrar como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'}`}
               </Button>
             </div>
           </form>

@@ -20,9 +20,10 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   roles: UserRole[];
+  accountType: UserRole | null;
   isLoading: boolean;
-  signIn: (email: string, password: string, role?: UserRole) => Promise<void>;
-  signUp: (email: string, password: string, fullName?: string, role?: UserRole) => Promise<void>;
+  signIn: (email: string, password: string, accountType: UserRole) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string, accountType?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
 }
@@ -34,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
+  const [accountType, setAccountType] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
@@ -52,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setRoles([]);
+          setAccountType(null);
         }
       }
     );
@@ -96,23 +99,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', userId);
 
       if (error) throw error;
-      setRoles(data.map(item => item.role));
+      
+      const userRoles = data.map(item => item.role as UserRole);
+      setRoles(userRoles);
+      
+      // Set the primary account type based on roles
+      if (userRoles.includes('host')) {
+        setAccountType('host');
+      } else if (userRoles.includes('client')) {
+        setAccountType('client');
+      } else if (userRoles.includes('admin')) {
+        setAccountType('admin');
+      }
     } catch (error) {
       console.error('Error fetching user roles:', error);
     }
   };
 
-  const signIn = async (email: string, password: string, role?: UserRole) => {
+  const signIn = async (email: string, password: string, accountType: UserRole) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) throw error;
       
-      // Redirecionar com base no papel do usuário
-      if (role === 'host') {
+      // After sign in, check if the user has the requested account type
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id);
+        
+      if (roleError) throw roleError;
+      
+      const userRoles = roleData.map(item => item.role);
+      if (!userRoles.includes(accountType)) {
+        // If the user doesn't have the requested account type, sign out and throw an error
+        await supabase.auth.signOut();
+        throw new Error(`Esta conta não está registrada como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'}`);
+      }
+      
+      setAccountType(accountType);
+      
+      // Redirect based on account type
+      if (accountType === 'host') {
         navigate('/host/dashboard');
       } else {
-        navigate('/');
+        navigate('/client/dashboard');
       }
       
       toast.success('Login realizado com sucesso!');
@@ -124,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, fullName?: string, role?: UserRole) => {
+  const signUp = async (email: string, password: string, fullName?: string, accountType: UserRole = 'client') => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.auth.signUp({
@@ -133,26 +165,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             full_name: fullName,
-            role: role || 'client', // Define o papel escolhido
+            account_type: accountType, // Store account type in user metadata
           },
         },
       });
       
       if (error) throw error;
 
-      // Se o cadastro foi bem-sucedido e temos um usuário, adicione o papel manualmente
+      // If the signup was successful and we have a user, add the account type role
       if (data.user) {
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert([
-            { user_id: data.user.id, role: role || 'client' }
+            { user_id: data.user.id, role: accountType }
           ]);
           
-        if (roleError) console.error('Error adding role:', roleError);
+        if (roleError) throw roleError;
       }
       
-      toast.success('Conta criada com sucesso! Verifique seu email para confirmação.');
-      navigate('/auth/login');
+      toast.success(`Conta criada com sucesso! Verifique seu email para confirmação.`);
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
       console.error('Error signing up:', error);
@@ -166,6 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      setAccountType(null);
       navigate('/');
       toast.success('Logout realizado com sucesso!');
     } catch (error: any) {
@@ -185,6 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     profile,
     roles,
+    accountType,
     isLoading,
     signIn,
     signUp,

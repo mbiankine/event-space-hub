@@ -3,7 +3,7 @@ import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -26,7 +27,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const { signIn, isLoading } = useAuth();
-  const [userType, setUserType] = React.useState<'client' | 'host'>('client');
+  const [accountType, setAccountType] = React.useState<'client' | 'host'>('client');
+  const navigate = useNavigate();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -37,7 +39,19 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    await signIn(data.email, data.password, userType);
+    try {
+      await signIn(data.email, data.password, accountType);
+      toast.success(`Login como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} realizado com sucesso!`);
+      
+      // Redirect based on account type
+      if (accountType === 'host') {
+        navigate('/host/dashboard');
+      } else {
+        navigate('/client/dashboard');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao fazer login');
+    }
   };
 
   return (
@@ -57,7 +71,7 @@ const Login = () => {
         
         <Tabs 
           defaultValue="client" 
-          onValueChange={(value) => setUserType(value as 'client' | 'host')}
+          onValueChange={(value) => setAccountType(value as 'client' | 'host')}
           className="w-full"
         >
           <TabsList className="grid grid-cols-2 w-full">
@@ -66,12 +80,12 @@ const Login = () => {
           </TabsList>
           <TabsContent value="client" className="mt-4">
             <p className="text-sm text-gray-500 mb-4">
-              Encontre e reserve os melhores espaços para seus eventos
+              Entre como Cliente para encontrar e reservar os melhores espaços para seus eventos
             </p>
           </TabsContent>
           <TabsContent value="host" className="mt-4">
             <p className="text-sm text-gray-500 mb-4">
-              Anuncie e gerencie seus espaços para eventos
+              Entre como Anfitrião para anunciar e gerenciar seus espaços para eventos
             </p>
           </TabsContent>
         </Tabs>
@@ -113,7 +127,7 @@ const Login = () => {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Entrando...' : `Entrar como ${userType === 'client' ? 'Cliente' : 'Anfitrião'}`}
+                {isLoading ? 'Entrando...' : `Entrar como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'}`}
               </Button>
             </div>
           </form>

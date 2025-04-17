@@ -36,12 +36,12 @@ const App = () => (
             <Route path="/auth/register" element={<Register />} />
             
             {/* Protected routes for clients */}
-            <Route element={<ProtectedRoute requiredRoles={['client']} />}>
+            <Route element={<ProtectedRoute requiredRole='client' />}>
               <Route path="/client/dashboard" element={<ClientDashboard />} />
             </Route>
             
             {/* Protected routes for hosts */}
-            <Route element={<ProtectedRoute requiredRoles={['host']} />}>
+            <Route element={<ProtectedRoute requiredRole='host' />}>
               <Route path="/host/dashboard" element={<HostDashboard />} />
               <Route path="/host/spaces" element={<ManageSpaces />} />
               <Route path="/host/spaces/new" element={<AddNewSpace />} />
@@ -49,7 +49,7 @@ const App = () => (
             </Route>
             
             {/* Protected routes for admins */}
-            <Route element={<ProtectedRoute requiredRoles={['admin']} />}>
+            <Route element={<ProtectedRoute requiredRole='admin' />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
             </Route>
             

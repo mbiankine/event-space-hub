@@ -6,11 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 export type UserRole = 'client' | 'host' | 'admin';
 
 interface ProtectedRouteProps {
-  requiredRoles?: UserRole[];
+  requiredRole?: UserRole;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRoles }) => {
-  const { user, hasRole, isLoading } = useAuth();
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) => {
+  const { user, accountType, isLoading } = useAuth();
   
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Carregando...</div>;
@@ -20,20 +20,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRoles })
     return <Navigate to="/auth/login" replace />;
   }
 
-  if (requiredRoles && requiredRoles.length > 0) {
-    const hasRequiredRole = requiredRoles.some(role => hasRole(role));
-    
-    if (!hasRequiredRole) {
-      // Redirect based on their role
-      if (hasRole('client')) {
-        return <Navigate to="/client/dashboard" replace />;
-      } else if (hasRole('host')) {
-        return <Navigate to="/host/dashboard" replace />;
-      } else if (hasRole('admin')) {
-        return <Navigate to="/admin/dashboard" replace />;
-      } else {
-        return <Navigate to="/" replace />;
-      }
+  if (requiredRole && accountType !== requiredRole) {
+    // Redirect based on their account type
+    if (accountType === 'client') {
+      return <Navigate to="/client/dashboard" replace />;
+    } else if (accountType === 'host') {
+      return <Navigate to="/host/dashboard" replace />;
+    } else if (accountType === 'admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    } else {
+      return <Navigate to="/" replace />;
     }
   }
 

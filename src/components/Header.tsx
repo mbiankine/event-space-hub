@@ -12,7 +12,7 @@ import { Globe, Menu, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
-  const { user, profile, roles, signOut, hasRole } = useAuth();
+  const { user, profile, accountType, signOut } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -25,23 +25,21 @@ export function Header() {
 
         {/* User Menu */}
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="rounded-full hidden md:flex"
-            onClick={() => {
-              if (hasRole('host')) {
-                navigate('/host/dashboard');
-              } else {
-                navigate('/auth/register');
-              }
-            }}
-          >
-            Anuncie seu espaço
-          </Button>
+          {!user && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="rounded-full hidden md:flex"
+              onClick={() => navigate('/auth/register?type=host')}
+            >
+              Anuncie seu espaço
+            </Button>
+          )}
+          
           <Button variant="ghost" size="icon" className="rounded-full hidden md:flex">
             <Globe className="h-4 w-4" />
           </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="rounded-full border-gray-300">
@@ -54,25 +52,35 @@ export function Header() {
                 <>
                   <DropdownMenuItem className="font-medium">
                     {profile?.full_name || user.email}
+                    {accountType && (
+                      <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full">
+                        {accountType === 'client' ? 'Cliente' : accountType === 'host' ? 'Anfitrião' : 'Admin'}
+                      </span>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   
-                  {hasRole('client') && (
+                  {accountType === 'client' && (
                     <DropdownMenuItem onClick={() => navigate('/client/dashboard')}>
                       Painel de Cliente
                     </DropdownMenuItem>
                   )}
                   
-                  {hasRole('host') && (
+                  {accountType === 'host' && (
                     <>
                       <DropdownMenuItem onClick={() => navigate('/host/dashboard')}>
                         Painel de Anfitrião
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Anuncie seu espaço</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/host/spaces')}>
+                        Meus Espaços
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/host/spaces/new')}>
+                        Anunciar novo espaço
+                      </DropdownMenuItem>
                     </>
                   )}
                   
-                  {hasRole('admin') && (
+                  {accountType === 'admin' && (
                     <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
                       Painel de Admin
                     </DropdownMenuItem>
@@ -92,7 +100,9 @@ export function Header() {
                     Entrar
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Anuncie seu espaço</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/auth/register?type=host')}>
+                    Anuncie seu espaço
+                  </DropdownMenuItem>
                   <DropdownMenuItem>Ajuda</DropdownMenuItem>
                 </>
               )}
