@@ -165,6 +165,7 @@ export function BookingCard({
             isDateAvailable={isDateAvailable}
             selectedDateRange={selectedDateRange}
             selectedDays={selectedDays}
+            setSelectedDays={setSelectedDays}
             bookingType={bookingType}
           />
           
