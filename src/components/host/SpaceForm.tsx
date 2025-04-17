@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -118,10 +119,13 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
 
   const [isValid, setIsValid] = useState(false);
 
+  // Watch for form changes and check validity
   useEffect(() => {
     const subscription = form.watch(() => {
-      form.trigger().then(result => {
-        setIsValid(result);
+      // Call validate to check form validity
+      form.trigger().then(isValid => {
+        console.log("Form validation status:", isValid, "Errors:", form.formState.errors);
+        setIsValid(isValid);
       });
     });
     
@@ -129,13 +133,20 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
   }, [form]);
 
   const handleImageUpload = (newImages: File[]) => {
-    if (!newImages || newImages.length === 0) return;
-    
     try {
+      // Get current images from form
       const currentImages = form.getValues("images") || [];
+      
+      // Filter out string images (already uploaded ones)
       const stringImages = currentImages.filter(img => typeof img === 'string');
-      form.setValue("images", [...stringImages, ...newImages]);
-      form.trigger("images");
+      
+      // Combine string images with new file images
+      const combinedImages = [...stringImages, ...newImages];
+      
+      // Update the form with combined images
+      form.setValue("images", combinedImages, { shouldValidate: true });
+      
+      console.log("Updated images in form:", combinedImages.length);
     } catch (error) {
       console.error("Error handling image upload:", error);
     }

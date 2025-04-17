@@ -90,12 +90,14 @@ const AddNewSpace = () => {
       
       // Upload images if there are any
       if (values.images?.length > 0) {
-        const uploadPromises = values.images.map(async (file: File | string, index: number) => {
-          // Skip if it's already a string (already uploaded)
-          if (typeof file === 'string') {
-            return file;
-          }
-
+        // Extract file objects - we'll only upload these
+        const fileImages = values.images.filter(img => img instanceof File) as File[];
+        // Extract string URLs/paths - these are already uploaded
+        const stringImages = values.images.filter(img => typeof img === 'string') as string[];
+        
+        console.log(`Processing ${fileImages.length} new images and ${stringImages.length} existing images`);
+        
+        const uploadPromises = fileImages.map(async (file: File, index: number) => {
           try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${insertedSpaceData.id}/${index}-${Date.now()}.${fileExt}`;
@@ -117,19 +119,25 @@ const AddNewSpace = () => {
         });
         
         try {
+          // Wait for all uploads to complete
           const uploadedPaths = await Promise.all(uploadPromises);
+          // Filter out any failed uploads
           const validPaths = uploadedPaths.filter(Boolean);
+          // Combine with existing string images
+          const allImagePaths = [...stringImages, ...validPaths];
           
-          // Update space with image paths
+          // Update space with all image paths
           const { error: updateError } = await supabase
             .from('spaces')
-            .update({ images: validPaths })
+            .update({ images: allImagePaths })
             .eq('id', insertedSpaceData.id);
             
           if (updateError) {
             console.error("Error updating space with images:", updateError);
             throw updateError;
           }
+          
+          console.log(`Successfully updated space with ${allImagePaths.length} images`);
         } catch (error) {
           console.error("Error in image upload process:", error);
           // Continue with success even if some images failed

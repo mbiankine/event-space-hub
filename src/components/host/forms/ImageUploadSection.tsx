@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { FormSection } from './FormSection';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,14 +14,22 @@ interface ImageUploadSectionProps {
 export function ImageUploadSection({ onChange, initialImages = [], error = false }: ImageUploadSectionProps) {
   const [uploadedImages, setUploadedImages] = useState<Array<string | File>>(initialImages || []);
 
+  // Effect to sync the initial images when they change (like when form is reset)
+  useEffect(() => {
+    setUploadedImages(initialImages || []);
+  }, [initialImages]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
       const updatedImages = [...uploadedImages, ...newFiles];
       setUploadedImages(updatedImages);
       
-      // Apenas passar objetos File para onChange
-      onChange(newFiles);
+      // Get all File objects from the updated images array
+      const fileObjects = updatedImages.filter(img => img instanceof File) as File[];
+      
+      // Pass all files to onChange, not just the new ones
+      onChange(fileObjects);
     }
   };
 
@@ -29,8 +37,7 @@ export function ImageUploadSection({ onChange, initialImages = [], error = false
     const updatedImages = uploadedImages.filter((_, i) => i !== index);
     setUploadedImages(updatedImages);
     
-    // Extrair apenas os objetos File e passar para onChange
-    // Isso garante que o tratamento de remoção só afete o que é necessário
+    // Extract only File objects and pass to onChange
     const fileObjects = updatedImages.filter(img => img instanceof File) as File[];
     onChange(fileObjects);
   };
@@ -41,16 +48,16 @@ export function ImageUploadSection({ onChange, initialImages = [], error = false
     if (image instanceof File) {
       imageUrl = URL.createObjectURL(image);
     } else if (typeof image === 'string') {
-      // Para strings, assumir que são URLs ou caminhos de armazenamento do Supabase
+      // For strings, assume they are URLs or Supabase storage paths
       if (image.startsWith('http')) {
         imageUrl = image;
       } else {
-        // Se for um caminho de armazenamento, construa o URL usando Supabase
+        // If it's a storage path, build the URL using Supabase
         const { data } = supabase.storage.from('spaces').getPublicUrl(image);
         imageUrl = data.publicUrl;
       }
     } else {
-      // Fallback para quaisquer outros casos
+      // Fallback for any other cases
       imageUrl = '/placeholder.svg';
     }
     
