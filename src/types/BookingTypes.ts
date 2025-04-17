@@ -1,3 +1,4 @@
+
 export interface Booking {
   id: string;
   client_id: string;
@@ -10,7 +11,7 @@ export interface Booking {
   notes?: string;
   status: string;
   payment_status: string;
-  payment_method?: string;
+  payment_method: string;
   total_price: number;
   space_price: number;
   additional_services_price: number;
