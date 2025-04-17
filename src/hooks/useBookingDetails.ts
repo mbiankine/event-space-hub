@@ -24,7 +24,6 @@ export const useBookingDetails = (id: string | undefined, user: any) => {
           spaces (
             title,
             images,
-            description,
             location,
             capacity,
             host_id
@@ -57,9 +56,7 @@ export const useBookingDetails = (id: string | undefined, user: any) => {
         ...data,
         space_title: data.spaces?.title || data.space_title,
         images: data.spaces?.images,
-        description: data.spaces?.description,
         location: data.spaces?.location,
-        capacity: data.spaces?.capacity,
         host_id: data.spaces?.host_id || data.host_id
       });
       
