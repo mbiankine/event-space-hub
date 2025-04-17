@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -12,6 +11,8 @@ import { MessagesThread } from '@/components/client/MessagesThread';
 import BookingHeader from '@/components/client/booking/BookingHeader';
 import BookingInfo from '@/components/client/booking/BookingInfo';
 import PaymentDetails from '@/components/client/booking/PaymentDetails';
+import { LoadingState } from '@/components/ui/loading-state';
+import { ErrorState } from '@/components/ui/error-state';
 
 const BookingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -90,14 +91,10 @@ const BookingDetails = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container px-4 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-            <div className="space-y-3">
-              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
+          <LoadingState 
+            title="Carregando reserva"
+            description="Por favor, aguarde enquanto carregamos os detalhes da sua reserva."
+          />
         </main>
         <Footer />
       </div>
@@ -109,13 +106,10 @@ const BookingDetails = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container px-4 py-8">
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-2">Erro</h2>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button asChild>
-              <Link to="/client/dashboard">Voltar para o Dashboard</Link>
-            </Button>
-          </div>
+          <ErrorState 
+            title="Erro ao carregar reserva"
+            description={error}
+          />
         </main>
         <Footer />
       </div>
