@@ -1,5 +1,5 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -14,6 +14,11 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 export function Header() {
   const { user, profile, accountType, roles, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
 
   return (
     <header className="border-b sticky top-0 z-50 bg-white">
@@ -62,7 +67,7 @@ export function Header() {
                   
                   {/* Cliente pode ver apenas o painel de cliente */}
                   {(accountType === 'client' || roles.includes('client') || roles.includes('host')) && (
-                    <DropdownMenuItem onClick={() => navigate('/client/dashboard')}>
+                    <DropdownMenuItem onClick={() => handleNavigation('/client/dashboard')}>
                       Painel de Cliente
                     </DropdownMenuItem>
                   )}
@@ -70,20 +75,20 @@ export function Header() {
                   {/* Anfitrião pode ver o painel de anfitrião E o de cliente */}
                   {(accountType === 'host' || roles.includes('host')) && (
                     <>
-                      <DropdownMenuItem onClick={() => navigate('/host/dashboard')}>
+                      <DropdownMenuItem onClick={() => handleNavigation('/host/dashboard')}>
                         Painel de Anfitrião
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/host/spaces')}>
+                      <DropdownMenuItem onClick={() => handleNavigation('/host/spaces')}>
                         Meus Espaços
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/host/spaces/new')}>
+                      <DropdownMenuItem onClick={() => handleNavigation('/host/spaces/new')}>
                         Anunciar novo espaço
                       </DropdownMenuItem>
                     </>
                   )}
                   
                   {accountType === 'admin' && (
-                    <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
+                    <DropdownMenuItem onClick={() => handleNavigation('/admin/dashboard')}>
                       Painel de Admin
                     </DropdownMenuItem>
                   )}
@@ -95,14 +100,14 @@ export function Header() {
                 </>
               ) : (
                 <>
-                  <DropdownMenuItem onClick={() => navigate('/auth/register')}>
+                  <DropdownMenuItem onClick={() => handleNavigation('/auth/register')}>
                     Registrar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/auth/login')}>
+                  <DropdownMenuItem onClick={() => handleNavigation('/auth/login')}>
                     Entrar
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/auth/register?type=host')}>
+                  <DropdownMenuItem onClick={() => handleNavigation('/auth/register?type=host')}>
                     Anuncie seu espaço
                   </DropdownMenuItem>
                   <DropdownMenuItem>Ajuda</DropdownMenuItem>

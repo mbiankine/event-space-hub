@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { UserRole } from '@/contexts/auth/types';
 
@@ -10,13 +10,14 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) => {
   const { user, accountType, roles, isLoading } = useAuth();
+  const location = useLocation();
   
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Carregando...</div>;
   }
 
   if (!user) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
   }
 
   if (requiredRole) {
