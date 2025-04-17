@@ -64,6 +64,8 @@ serve(async (req) => {
 
         // Update booking status if this was a booking payment
         if (session.metadata?.booking_id) {
+          console.log(`Updating booking ${session.metadata.booking_id} to confirmed status with payment method ${session.payment_method_types?.[0] || 'card'}`);
+          
           // Update the booking record with payment_method and payment status
           const { error: updateError } = await supabaseAdmin
             .from('bookings')
@@ -84,20 +86,34 @@ serve(async (req) => {
           // Force a double-check update after a short delay to ensure changes are applied
           setTimeout(async () => {
             try {
-              const { error: doubleCheckError } = await supabaseAdmin
+              const { data: checkBooking, error: checkError } = await supabaseAdmin
                 .from('bookings')
-                .update({
-                  payment_status: 'paid',
-                  status: 'confirmed',
-                  updated_at: new Date().toISOString()
-                })
+                .select('payment_status, status')
                 .eq('id', session.metadata.booking_id)
-                .eq('payment_status', 'pending');
+                .single();
                 
-              if (doubleCheckError) {
-                console.error("Error in double-check update:", doubleCheckError);
+              console.log(`Double-check result for booking ${session.metadata.booking_id}:`, checkBooking);
+                
+              if (checkError) {
+                console.error("Error in double-check query:", checkError);
+              } else if (checkBooking.payment_status !== 'paid' || checkBooking.status !== 'confirmed') {
+                console.log("Booking still not properly updated, forcing another update");
+                const { error: doubleCheckError } = await supabaseAdmin
+                  .from('bookings')
+                  .update({
+                    payment_status: 'paid',
+                    status: 'confirmed',
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', session.metadata.booking_id);
+                  
+                if (doubleCheckError) {
+                  console.error("Error in double-check update:", doubleCheckError);
+                } else {
+                  console.log("Double-check update completed successfully");
+                }
               } else {
-                console.log("Double-check update completed successfully");
+                console.log("Booking already updated correctly, no action needed");
               }
             } catch (err) {
               console.error("Error in double-check update:", err);

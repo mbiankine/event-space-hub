@@ -2,7 +2,6 @@
 import React from 'react';
 import { CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface PaymentDetailsProps {
@@ -29,6 +28,8 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
     switch (status) {
       case 'paid':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Pago</Badge>;
+      case 'failed':
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Falhou</Badge>;
       default:
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
     }
