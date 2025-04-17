@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -43,6 +44,7 @@ const Register = () => {
   
   const [accountType, setAccountType] = React.useState<'client' | 'host'>(initialAccountType);
   const [showProfileCompletion, setShowProfileCompletion] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Add this state
 
   useEffect(() => {
     if (user) {
@@ -61,7 +63,7 @@ const Register = () => {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
-    if (!data.password === data.confirmPassword) {
+    if (data.password !== data.confirmPassword) { // Fix the comparison
       toast.error("As senhas não conferem");
       return;
     }
@@ -193,9 +195,9 @@ const Register = () => {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || isSubmitting}
                 >
-                  {isLoading ? 'Registrando...' : `Registrar como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'}`}
+                  {isLoading || isSubmitting ? 'Registrando...' : `Registrar como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'}`}
                 </Button>
               </div>
             </form>
