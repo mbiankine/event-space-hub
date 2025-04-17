@@ -20,6 +20,7 @@ import { SpaceAmenities } from "@/components/space/SpaceAmenities";
 import { BookingCard } from "@/components/space/BookingCard";
 import { AuthDialog } from "@/components/space/AuthDialog";
 import { BookingFormModal } from "@/components/space/BookingFormModal";
+import { useStripeConfig } from "@/hooks/useStripeConfig";
 
 const bookingFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
@@ -49,10 +50,13 @@ const SpaceDetail = () => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, isLoading: isAuthLoading } = useAuth();
+  const { startStripeCheckout, isLoading: isStripeLoading } = useStripeConfig();
   
   useEffect(() => {
     const pendingBooking = localStorage.getItem('pendingBookingSpace');
@@ -200,6 +204,7 @@ const SpaceDetail = () => {
       form.setValue('bookingType', bookingType);
       
       setIsAuthModalOpen(false);
+      setBookingConfirmed(false);
       setIsBookingModalOpen(true);
       
       return { success: true };
@@ -282,12 +287,12 @@ const SpaceDetail = () => {
       
       if (error) throw error;
       
-      toast.success("Reserva criada com sucesso!", {
-        description: "Agora você será redirecionado para o pagamento."
-      });
+      setBookingConfirmed(true);
+      setConfirmedBookingId(data[0].id);
       
-      setIsBookingModalOpen(false);
-      form.reset();
+      toast.success("Pré-reserva criada com sucesso!", {
+        description: "Confirme os detalhes para prosseguir para o pagamento."
+      });
       
       return { success: true, bookingId: data[0].id };
       
@@ -299,6 +304,30 @@ const SpaceDetail = () => {
       return { success: false };
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  const handleProceedToPayment = async () => {
+    if (!confirmedBookingId || !space) return;
+    
+    let price = 0;
+    let days;
+    
+    if (bookingType === 'hourly') {
+      price = (space.hourly_price || 0) * selectedHours;
+    } else {
+      price = space.price * selectedDays;
+      days = selectedDays;
+    }
+    
+    await startStripeCheckout(space.id, price, days);
+  };
+  
+  const handleCloseBookingModal = () => {
+    setIsBookingModalOpen(false);
+    if (!bookingConfirmed) {
+      setBookingConfirmed(false);
+      setConfirmedBookingId(null);
     }
   };
   
@@ -374,12 +403,15 @@ const SpaceDetail = () => {
         
         <BookingFormModal
           isOpen={isBookingModalOpen}
-          onClose={() => setIsBookingModalOpen(false)}
+          onClose={handleCloseBookingModal}
           onSubmit={onSubmit}
+          onProceedToPayment={handleProceedToPayment}
           form={form}
           space={space}
           isSubmitting={isSubmitting}
           isDateAvailable={isDateAvailable}
+          bookingConfirmed={bookingConfirmed}
+          isProcessingPayment={isStripeLoading}
         />
       </main>
       <Footer />
