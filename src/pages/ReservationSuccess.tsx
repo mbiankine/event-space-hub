@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,11 +6,17 @@ import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { Booking } from '@/types/BookingTypes';
 
 interface BookingDetails {
   id: string;
   status: string;
   space_title?: string;
+}
+
+type BookingQueryResult = {
+  data: BookingDetails[] | null;
+  error: any;
 }
 
 const ReservationSuccess = () => {
@@ -29,10 +36,7 @@ const ReservationSuccess = () => {
         setIsLoading(true);
         
         console.log("Looking for booking with session ID:", sessionId);
-        const { data: bookingData, error: bookingError }: { 
-          data: Array<{ id: string; status: string; space_title?: string }> | null; 
-          error: any; 
-        } = await supabase
+        const { data: bookingData, error: bookingError }: BookingQueryResult = await supabase
           .from('bookings')
           .select('id, status, space_title')
           .eq('payment_intent', sessionId)
@@ -71,10 +75,7 @@ const ReservationSuccess = () => {
         } 
         else {
           console.log("No booking found by payment_intent, looking for recent pending bookings");
-          const { data: pendingBookings, error: pendingError }: { 
-            data: Array<{ id: string; status: string; space_title?: string }> | null; 
-            error: any; 
-          } = await supabase
+          const { data: pendingBookings, error: pendingError }: BookingQueryResult = await supabase
             .from('bookings')
             .select('id, status, space_title')
             .eq('payment_status', 'pending')
