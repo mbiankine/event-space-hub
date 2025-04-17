@@ -45,13 +45,13 @@ const BookingDetail = () => {
           return;
         }
 
-        // Ensure payment_method exists with a default value if it's not present
-        const completeBookingData = {
+        // Add payment_method with default value if it doesn't exist
+        const bookingWithPaymentMethod = {
           ...bookingData,
           payment_method: bookingData.payment_method || 'card'
         } as Booking;
 
-        setBooking(completeBookingData);
+        setBooking(bookingWithPaymentMethod);
 
         if (bookingData.space_id) {
           const { data: spaceData, error: spaceError } = await supabase
