@@ -45,13 +45,48 @@ serve(async (req) => {
     
     console.log(`Authenticated user: ${user.id} (${user.email})`);
 
-    // Get Stripe secret key from environment variables
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      console.error("STRIPE_SECRET_KEY is not configured in edge function secrets");
+    // Create a service client to fetch the stripe configuration (bypasses RLS)
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!serviceRoleKey) {
+      throw new Error("Service role key not configured");
+    }
+    
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      serviceRoleKey
+    );
+
+    // Get Stripe configuration from database
+    const { data: stripeConfig, error: configError } = await supabaseAdmin
+      .from('stripe_config')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (configError) {
+      console.error("Error fetching Stripe config:", configError.message);
       return new Response(
         JSON.stringify({
-          error: "STRIPE_SECRET_KEY is not configured. Please add your Stripe secret key to the edge function secrets."
+          error: "Stripe configuration not found. Please set up Stripe in the admin panel first."
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500
+        }
+      );
+    }
+
+    // Determine which key to use based on mode
+    const stripeSecretKey = stripeConfig.mode === 'production' && stripeConfig.prod_key 
+      ? stripeConfig.prod_key 
+      : stripeConfig.test_key;
+
+    if (!stripeSecretKey) {
+      console.error("No valid Stripe key found in configuration");
+      return new Response(
+        JSON.stringify({
+          error: "Stripe API key not properly configured. Please check the Stripe settings in the admin panel."
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -62,10 +97,10 @@ serve(async (req) => {
 
     // Validate Stripe key format
     if (!stripeSecretKey.startsWith('sk_')) {
-      console.error("Invalid STRIPE_SECRET_KEY format");
+      console.error("Invalid Stripe key format in configuration");
       return new Response(
         JSON.stringify({
-          error: "Invalid STRIPE_SECRET_KEY format. It should start with 'sk_'."
+          error: "Invalid Stripe key format in configuration. Please check the Stripe settings in the admin panel."
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },

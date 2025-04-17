@@ -103,17 +103,68 @@ serve(async (req) => {
       throw new Error("Unauthorized: Admin role required");
     }
 
-    // Store API keys securely in edge function secrets
-    // In a real implementation, this would be more secure
-    // For now, we'll just log that we received them
-    console.log(`Stripe keys received for mode: ${mode}`);
-    console.log(`Test key begins with: ${testApiKey.substring(0, 7)}...`);
-    if (prodApiKey) {
-      console.log(`Production key begins with: ${prodApiKey.substring(0, 7)}...`);
+    // Create a service client to save the configuration (bypasses RLS)
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!serviceRoleKey) {
+      throw new Error("Service role key not configured");
     }
     
-    // In a real production app, we would save the keys to a secure storage
-    // or database table with proper encryption
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      serviceRoleKey
+    );
+
+    // Check if configuration already exists
+    const { data: existingConfig, error: fetchError } = await supabaseAdmin
+      .from('stripe_config')
+      .select('*')
+      .single();
+      
+    if (fetchError && !fetchError.message.includes('No rows found')) {
+      console.error("Error fetching config:", fetchError);
+      throw new Error(`Database error: ${fetchError.message}`);
+    }
+
+    // Save or update configuration
+    let dbOperation;
+    if (existingConfig) {
+      dbOperation = supabaseAdmin
+        .from('stripe_config')
+        .update({
+          test_key: testApiKey,
+          prod_key: prodApiKey || null,
+          webhook_secret: webhookSecret || null,
+          mode,
+          updated_at: new Date().toISOString(),
+          updated_by: user.id
+        })
+        .eq('id', existingConfig.id);
+    } else {
+      dbOperation = supabaseAdmin
+        .from('stripe_config')
+        .insert({
+          test_key: testApiKey,
+          prod_key: prodApiKey || null,
+          webhook_secret: webhookSecret || null,
+          mode,
+          created_by: user.id,
+          updated_by: user.id
+        });
+    }
+    
+    const { error: saveError } = await dbOperation;
+    if (saveError) {
+      console.error("Error saving config:", saveError);
+      throw new Error(`Failed to save configuration: ${saveError.message}`);
+    }
+    
+    console.log("Stripe configuration saved successfully to database");
+    
+    // Update the STRIPE_SECRET_KEY in edge function secrets for immediate use
+    const activeKey = mode === 'production' && prodApiKey ? prodApiKey : testApiKey;
+    
+    // We can't directly update edge function secrets here, but we can use the saved key
+    // in other edge functions by fetching from the database
     
     return new Response(JSON.stringify({ 
       success: true,

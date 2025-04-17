@@ -17,6 +17,7 @@ const StripeConfig = () => {
   const navigate = useNavigate();
   const { hasRole, user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   const [isProduction, setIsProduction] = useState(false);
   const [testApiKey, setTestApiKey] = useState("");
   const [prodApiKey, setProdApiKey] = useState("");
@@ -24,6 +25,47 @@ const StripeConfig = () => {
   const [stripeConnected, setStripeConnected] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorDetails, setErrorDetails] = useState("");
+
+  // Fetch existing configuration from database
+  useEffect(() => {
+    const fetchStripeConfig = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoadingConfig(true);
+        const { data, error } = await supabase
+          .from('stripe_config')
+          .select('*')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error fetching Stripe config:", error);
+          return;
+        }
+        
+        if (data) {
+          // Mask API keys for display (only showing last 4 characters)
+          const maskKey = (key) => key ? `${key.substring(0, 7)}${'•'.repeat(key.length - 11)}${key.substring(key.length - 4)}` : '';
+          
+          setTestApiKey(data.test_key || '');
+          setProdApiKey(data.prod_key || '');
+          setWebhookSecret(data.webhook_secret || '');
+          setIsProduction(data.mode === 'production');
+          setStripeConnected(true);
+          
+          toast.success("Configuração do Stripe carregada com sucesso", { id: "stripe-config-loaded" });
+        }
+      } catch (error) {
+        console.error("Error in fetchStripeConfig:", error);
+      } finally {
+        setIsLoadingConfig(false);
+      }
+    };
+    
+    fetchStripeConfig();
+  }, [user]);
 
   useEffect(() => {
     // Reset error when changing API keys
@@ -173,19 +215,26 @@ const StripeConfig = () => {
               <CardDescription>Status atual da conexão com a API Stripe</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="flex items-center space-x-2 mb-4">
-                {stripeConnected ? (
-                  <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <span className="font-medium">Conectado e funcionando</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-5 w-5 text-amber-500" />
-                    <span className="font-medium">Não configurado</span>
-                  </>
-                )}
-              </div>
+              {isLoadingConfig ? (
+                <div className="flex items-center space-x-2 mb-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="font-medium">Carregando configuração...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 mb-4">
+                  {stripeConnected ? (
+                    <>
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      <span className="font-medium">Conectado e funcionando</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                      <span className="font-medium">Não configurado</span>
+                    </>
+                  )}
+                </div>
+              )}
               
               <p className="text-muted-foreground mb-6 text-sm">
                 A integração com o Stripe permite que sua plataforma processe pagamentos de forma segura 

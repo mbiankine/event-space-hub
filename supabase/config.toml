@@ -1,23 +1,23 @@
 
+# Learn more about this file in docs: https://supabase.com/docs/reference/cli/config
+
 project_id = "gxxxqmthymdepqvxsaxc"
 
 [api]
 enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
-enabled = false
+port = 54322
 
-[realtime]
-enabled = false
-
-[storage]
-enabled = false
-
-[edge_functions]
+[studio]
 enabled = true
+port = 54323
 
-[edge_functions.save-stripe-keys]
+# API Edge Functions
+[functions.save-stripe-keys]
 verify_jwt = true
 
-[edge_functions.create-checkout]
+[functions.create-checkout]
 verify_jwt = true
