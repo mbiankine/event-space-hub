@@ -61,20 +61,20 @@ export const SearchBar = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-background p-2 rounded-full border border-border shadow-sm flex items-center">
+    <div className="w-full bg-background p-2 rounded-full border border-border shadow-sm flex items-center">
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2 min-w-[140px] justify-start py-6 px-4 border-r border-border">
             <MapPin className="h-4 w-4" />
-            <span className="text-sm truncate">
+            <span className="text-sm truncate text-left">
               {isLoading ? 'Carregando...' : location ? `${location.city}, ${location.state}` : 'Localização'}
             </span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 w-72 bg-background">
+        <PopoverContent className="p-0 w-72">
           <div className="p-4">
             <div className="mb-4">
-              <h4 className="text-sm font-medium mb-2">Encontrar espaços em</h4>
+              <h4 className="text-sm font-medium mb-2 text-left">Encontrar espaços em</h4>
               <Input 
                 placeholder="Digite cidade ou estado"
                 className="w-full"
@@ -100,14 +100,13 @@ export const SearchBar = () => {
         <PopoverTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2 min-w-[120px] justify-start py-6 px-4 border-r border-border">
             <Calendar className="h-4 w-4" />
-            <span className="text-sm truncate">Data</span>
+            <span className="text-sm truncate text-left">Data</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="bg-background">
+        <PopoverContent>
           <div className="p-4">
-            <h4 className="text-sm font-medium mb-2">Selecione uma data</h4>
-            {/* Here you can add a date selector */}
-            <p className="text-sm text-muted-foreground">Funcionalidade de calendário a ser implementada</p>
+            <h4 className="text-sm font-medium mb-2 text-left">Selecione uma data</h4>
+            <p className="text-sm text-muted-foreground text-left">Funcionalidade de calendário a ser implementada</p>
           </div>
         </PopoverContent>
       </Popover>
@@ -116,14 +115,13 @@ export const SearchBar = () => {
         <PopoverTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2 min-w-[120px] justify-start py-6 px-4">
             <Users className="h-4 w-4" />
-            <span className="text-sm truncate">Convidados</span>
+            <span className="text-sm truncate text-left">Convidados</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="bg-background">
+        <PopoverContent>
           <div className="p-4">
-            <h4 className="text-sm font-medium mb-2">Número de convidados</h4>
-            {/* Here you can add a quantity selector */}
-            <p className="text-sm text-muted-foreground">Funcionalidade de convidados a ser implementada</p>
+            <h4 className="text-sm font-medium mb-2 text-left">Número de convidados</h4>
+            <p className="text-sm text-muted-foreground text-left">Funcionalidade de convidados a ser implementada</p>
           </div>
         </PopoverContent>
       </Popover>

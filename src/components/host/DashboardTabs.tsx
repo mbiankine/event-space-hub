@@ -35,20 +35,20 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
         </div>
 
         <TabsContent value="spaces" className="flex-1 space-y-4 mt-4">
-          <div className="flex justify-between items-start text-left">
-            <h2 className="text-xl font-semibold">Meus Espaços</h2>
+          <div className="flex justify-between items-start">
+            <h2 className="text-xl font-semibold text-left">Meus Espaços</h2>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/host/spaces" className="text-left">Ver todos</Link>
+              <Link to="/host/spaces" className="flex items-center">Ver todos</Link>
             </Button>
           </div>
           <SpacesList spaces={spaces} />
         </TabsContent>
 
         <TabsContent value="bookings" className="flex-1 space-y-4 mt-4">
-          <div className="flex justify-between items-start text-left">
-            <h2 className="text-xl font-semibold">Próximas Reservas</h2>
+          <div className="flex justify-between items-start">
+            <h2 className="text-xl font-semibold text-left">Próximas Reservas</h2>
             <Button variant="outline" asChild>
-              <Link to="/host/bookings" className="text-left flex items-center">
+              <Link to="/host/bookings" className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />
                 Ver Calendário
               </Link>

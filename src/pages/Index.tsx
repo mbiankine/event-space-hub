@@ -63,16 +63,21 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      {/* Search bar */}
-      <div className="bg-background shadow-sm py-4 sticky top-16 z-40">
-        <div className="container px-4 md:px-6 lg:px-8">
-          <SearchBar />
+      {/* Search bar section with background */}
+      <div className="bg-background py-6 shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <h1 className="text-2xl md:text-3xl font-semibold mb-4 text-left">Encontre o espaço perfeito para seu evento</h1>
+            <SearchBar />
+          </div>
         </div>
       </div>
       
       <CategoryFilters />
-      <main className="flex-1">
-        <div className="container px-4 md:px-6 lg:px-8 py-8">
+      <main className="flex-1 bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <h2 className="text-2xl font-semibold mb-6 text-left">Espaços em destaque</h2>
+          
           {isLoading ? (
             <LoadingState />
           ) : formattedSpaces.length > 0 ? (

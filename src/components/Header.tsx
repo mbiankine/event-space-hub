@@ -32,14 +32,11 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b sticky top-0 bg-background z-10">
-      <div className="container flex items-center justify-between h-16 px-4 md:px-6">
-        <Link to="/" className="flex items-center gap-2">
+    <header className="border-b sticky top-0 bg-background z-50">
+      <div className="container mx-auto flex items-center justify-between h-16 px-4">
+        <Link to="/" className="flex items-center">
           <span className="text-xl font-bold text-primary">EventSpace</span>
         </Link>
-
-        {/* Search bar removed from here */}
-        <div className="flex-1"></div>
 
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
@@ -58,7 +55,7 @@ export const Header = () => {
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to={user.user_metadata?.account_type === "host" ? "/host/dashboard" : "/client/dashboard"} className="cursor-pointer">
+                  <Link to={user.user_metadata?.account_type === "host" ? "/host/dashboard" : "/client/dashboard"} className="cursor-pointer w-full">
                     <User className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </Link>
