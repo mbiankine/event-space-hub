@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,8 +32,14 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
   const { signUp, isLoading } = useAuth();
-  const [accountType, setAccountType] = React.useState<'client' | 'host'>('client');
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if the URL has a type parameter (for direct link to host registration)
+  const params = new URLSearchParams(location.search);
+  const initialAccountType = params.get('type') === 'host' ? 'host' : 'client';
+  
+  const [accountType, setAccountType] = React.useState<'client' | 'host'>(initialAccountType);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -45,6 +52,7 @@ const Register = () => {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
+    console.log('Submitting registration form:', { ...data, accountType });
     try {
       const result = await signUp(data.email, data.password, data.fullName, accountType);
       
@@ -57,6 +65,7 @@ const Register = () => {
       }
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
+      console.error('Registration error:', error);
     }
   };
 
@@ -76,7 +85,8 @@ const Register = () => {
         </div>
         
         <Tabs 
-          defaultValue="client" 
+          defaultValue={accountType} 
+          value={accountType}
           onValueChange={(value) => setAccountType(value as 'client' | 'host')}
           className="w-full"
         >

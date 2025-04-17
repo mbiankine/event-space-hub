@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,8 +27,14 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const { signIn, isLoading } = useAuth();
-  const [accountType, setAccountType] = React.useState<'client' | 'host'>('client');
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if the URL has a type parameter (for direct link to host login)
+  const params = new URLSearchParams(location.search);
+  const initialAccountType = params.get('type') === 'host' ? 'host' : 'client';
+  
+  const [accountType, setAccountType] = React.useState<'client' | 'host'>(initialAccountType);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,17 +46,12 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
+      console.log(`Attempting to login as ${accountType}`, data.email);
       await signIn(data.email, data.password, accountType);
-      toast.success(`Login como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} realizado com sucesso!`);
-      
-      // Redirect based on account type
-      if (accountType === 'host') {
-        navigate('/host/dashboard');
-      } else {
-        navigate('/client/dashboard');
-      }
+      // Navigation is handled inside signIn function
     } catch (error: any) {
       toast.error(error.message || 'Erro ao fazer login');
+      console.error('Login error:', error);
     }
   };
 
@@ -69,7 +71,8 @@ const Login = () => {
         </div>
         
         <Tabs 
-          defaultValue="client" 
+          defaultValue={accountType}
+          value={accountType}
           onValueChange={(value) => setAccountType(value as 'client' | 'host')}
           className="w-full"
         >

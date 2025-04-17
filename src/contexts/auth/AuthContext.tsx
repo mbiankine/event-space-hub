@@ -20,6 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("Setting up auth state listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log('Auth state changed', event, currentSession?.user?.id);
@@ -28,6 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (event === 'SIGNED_IN' && currentSession?.user) {
           setTimeout(() => {
+            console.log("Fetching user data after sign in");
             fetchUserProfile(currentSession.user.id).then(profile => {
               console.log('Fetched profile', profile);
               setProfile(profile);
@@ -39,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           }, 0);
         } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out, clearing data");
           setProfile(null);
           setRoles([]);
           setAccountType(null);
@@ -46,12 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    console.log("Checking for existing session");
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log('Initial session check', currentSession?.user?.id);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
+        console.log("Found existing session, fetching user data");
         fetchUserProfile(currentSession.user.id).then(profile => {
           console.log('Initial profile fetch', profile);
           setProfile(profile);
@@ -73,11 +78,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string, accountType: UserRole) => {
     try {
       setIsLoading(true);
+      console.log(`Attempting to sign in as ${accountType}`);
       const { success, error } = await authService.signIn(email, password, accountType);
       
       if (!success) throw error;
       
       setAccountType(accountType);
+      console.log(`Sign in successful, redirecting to ${accountType} dashboard`);
       
       if (accountType === 'host') {
         navigate('/host/dashboard');
@@ -97,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, fullName?: string, accountType: UserRole = 'client') => {
     try {
       setIsLoading(true);
+      console.log(`Attempting to sign up as ${accountType}`);
       const { success, error } = await authService.signUp(email, password, fullName, accountType);
       
       if (!success) throw error;
