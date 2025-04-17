@@ -14,6 +14,7 @@ import Settings from '@/pages/host/Settings';
 import HostDashboard from '@/pages/host/Dashboard';
 import ClientDashboard from '@/pages/client/Dashboard';
 import AdminDashboard from '@/pages/admin/Dashboard';
+import StripeConfig from '@/pages/admin/StripeConfig';
 import Index from '@/pages/Index';
 import SpaceDetail from '@/pages/SpaceDetail';
 import Login from '@/pages/auth/Login';
@@ -93,6 +94,10 @@ function App() {
             <Route 
               path="/admin/dashboard" 
               element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} 
+            />
+            <Route 
+              path="/admin/stripe" 
+              element={<ProtectedRoute requiredRole="admin"><StripeConfig /></ProtectedRoute>} 
             />
             
             {/* Catch-all route */}

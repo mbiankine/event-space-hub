@@ -5,8 +5,15 @@ import UsersTab from './UsersTab';
 import SpacesTab from './SpacesTab';
 import BookingsTab from './BookingsTab';
 import ReportsTab from './ReportsTab';
+import { User, Space, Booking } from '@/hooks/useAdminDashboard';
 
-const DashboardTabs = () => {
+interface DashboardTabsProps {
+  users: User[];
+  spaces: Space[];
+  bookings: Booking[];
+}
+
+const DashboardTabs = ({ users, spaces, bookings }: DashboardTabsProps) => {
   return (
     <Tabs defaultValue="users" className="mb-8">
       <TabsList>
@@ -17,15 +24,15 @@ const DashboardTabs = () => {
       </TabsList>
 
       <TabsContent value="users" className="space-y-6 mt-6">
-        <UsersTab />
+        <UsersTab users={users} />
       </TabsContent>
 
       <TabsContent value="spaces" className="space-y-6 mt-6">
-        <SpacesTab />
+        <SpacesTab spaces={spaces} />
       </TabsContent>
 
       <TabsContent value="bookings" className="space-y-6 mt-6">
-        <BookingsTab />
+        <BookingsTab bookings={bookings} />
       </TabsContent>
 
       <TabsContent value="reports" className="space-y-6 mt-6">
