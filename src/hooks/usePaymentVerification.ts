@@ -24,6 +24,30 @@ export function usePaymentVerification(sessionId: string | null) {
         setIsLoading(true);
         
         console.log("Session ID provided:", sessionId);
+        
+        // First, check if we already have a booking with this payment_intent
+        const { data: existingBooking, error: existingError } = await supabase
+          .from('bookings')
+          .select('id, status, space_title')
+          .eq('payment_intent', sessionId)
+          .maybeSingle();
+        
+        if (existingError) {
+          console.error("Error checking existing booking:", existingError);
+          throw existingError;
+        }
+        
+        // If we found an existing booking, return it
+        if (existingBooking) {
+          console.log("Found existing booking with this payment intent:", existingBooking.id);
+          setBookingDetails({
+            id: existingBooking.id,
+            status: existingBooking.status,
+            space_title: existingBooking.space_title
+          });
+          return;
+        }
+        
         console.log("Looking for recent pending bookings");
         
         const { data: pendingBookings, error: pendingError } = await supabase
