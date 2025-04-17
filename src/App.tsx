@@ -9,6 +9,8 @@ import EditSpace from '@/pages/host/EditSpace';
 import SpaceCalendar from '@/pages/host/SpaceCalendar';
 import Bookings from '@/pages/host/Bookings';
 import Messages from '@/pages/host/Messages';
+import Analytics from '@/pages/host/Analytics';
+import Settings from '@/pages/host/Settings';
 import HostDashboard from '@/pages/host/Dashboard';
 import ClientDashboard from '@/pages/client/Dashboard';
 import Index from '@/pages/Index';
@@ -68,6 +70,14 @@ function App() {
             <Route 
               path="/host/messages" 
               element={<ProtectedRoute requiredRole="host"><Messages /></ProtectedRoute>} 
+            />
+            <Route 
+              path="/host/analytics" 
+              element={<ProtectedRoute requiredRole="host"><Analytics /></ProtectedRoute>} 
+            />
+            <Route 
+              path="/host/settings" 
+              element={<ProtectedRoute requiredRole="host"><Settings /></ProtectedRoute>} 
             />
             
             {/* Catch-all route */}
