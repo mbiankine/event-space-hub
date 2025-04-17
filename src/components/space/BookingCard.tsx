@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addHours, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -30,7 +29,7 @@ interface BookingCardProps {
   bookingType: "hourly" | "daily";
   setBookingType: (type: "hourly" | "daily") => void;
   isDateAvailable: (date: Date) => boolean;
-  handleBookNow: () => Promise<{ success: boolean }>;
+  handleBookNow: () => Promise<{ success: boolean, bookingId?: string }>;
 }
 
 export function BookingCard({
@@ -114,7 +113,6 @@ export function BookingCard({
         throw new Error('Falha ao criar reserva');
       }
       
-      // If the booking has a bookingId field, set it to confirmedBookingId
       if (bookingResult.bookingId) {
         setConfirmedBookingId(bookingResult.bookingId);
         handleProceedToPayment();

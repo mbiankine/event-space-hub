@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
-// Define a simple type for booking details to avoid deep type instantiation
 interface BookingDetails {
   id: string;
   status: string;
@@ -30,11 +28,10 @@ const ReservationSuccess = () => {
       try {
         setIsLoading(true);
         
-        // First, look for bookings that may be related to this session ID via the payment_intent field
         console.log("Looking for booking with session ID:", sessionId);
         const { data: bookingData, error: bookingError } = await supabase
           .from('bookings')
-          .select('*')
+          .select('id, status, space_title')
           .eq('payment_intent', sessionId)
           .limit(1);
         
@@ -43,12 +40,10 @@ const ReservationSuccess = () => {
           throw bookingError;
         }
         
-        // If we found a booking by payment_intent
         if (bookingData && bookingData.length > 0) {
           console.log("Found booking by payment_intent:", bookingData[0].id);
           const booking = bookingData[0];
           
-          // Update the booking status
           const { error: updateError } = await supabase
             .from('bookings')
             .update({
@@ -71,12 +66,11 @@ const ReservationSuccess = () => {
           
           toast.success('Pagamento confirmado com sucesso!');
         } 
-        // Fallback to look for recent pending bookings
         else {
           console.log("No booking found by payment_intent, looking for recent pending bookings");
           const { data: pendingBookings, error: pendingError } = await supabase
             .from('bookings')
-            .select('*')
+            .select('id, status, space_title')
             .eq('payment_status', 'pending')
             .order('created_at', { ascending: false })
             .limit(1);
@@ -90,7 +84,6 @@ const ReservationSuccess = () => {
             console.log("Found recent pending booking:", pendingBookings[0].id);
             const booking = pendingBookings[0];
             
-            // Update the booking with both payment_status and the session ID
             const { error: updateError } = await supabase
               .from('bookings')
               .update({
@@ -114,7 +107,6 @@ const ReservationSuccess = () => {
             
             toast.success('Pagamento confirmado com sucesso!');
           } else {
-            // If we still can't find anything, show generic confirmation
             console.log("No related booking found, showing generic confirmation");
             setBookingDetails({
               id: sessionId.substring(0, 8),

@@ -181,7 +181,7 @@ const SpaceDetail = () => {
     );
   };
   
-  const handleBookNow = async (): Promise<{ success: boolean }> => {
+  const handleBookNow = async (): Promise<{ success: boolean, bookingId?: string }> => {
     if (!user) {
       setIsAuthModalOpen(true);
       
