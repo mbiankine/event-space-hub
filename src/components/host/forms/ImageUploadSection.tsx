@@ -5,25 +5,67 @@ import { FormSection } from './FormSection';
 
 interface ImageUploadSectionProps {
   onChange: (images: File[]) => void;
-  initialImages?: File[];
+  initialImages?: File[] | string[];
 }
 
 export function ImageUploadSection({ onChange, initialImages = [] }: ImageUploadSectionProps) {
-  const [uploadedImages, setUploadedImages] = useState<File[]>(initialImages || []);
+  const [uploadedImages, setUploadedImages] = useState<(File | string)[]>(initialImages || []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
       const updatedImages = [...uploadedImages, ...newFiles];
       setUploadedImages(updatedImages);
-      onChange(updatedImages);
+      
+      // Only pass File objects to onChange
+      const fileObjects = updatedImages.filter(img => img instanceof File) as File[];
+      onChange(fileObjects);
     }
   };
 
   const removeImage = (index: number) => {
     const updatedImages = uploadedImages.filter((_, i) => i !== index);
     setUploadedImages(updatedImages);
-    onChange(updatedImages);
+    
+    // Only pass File objects to onChange
+    const fileObjects = updatedImages.filter(img => img instanceof File) as File[];
+    onChange(fileObjects);
+  };
+
+  const renderImagePreview = (image: File | string, index: number) => {
+    let imageUrl: string;
+    
+    if (image instanceof File) {
+      imageUrl = URL.createObjectURL(image);
+    } else if (typeof image === 'string') {
+      // For strings, assume they are either URLs or Supabase storage paths
+      if (image.startsWith('http')) {
+        imageUrl = image;
+      } else {
+        // If it's a storage path, we could construct the URL, but for now just show placeholder
+        imageUrl = '/placeholder.svg';
+      }
+    } else {
+      // Fallback for any other cases
+      imageUrl = '/placeholder.svg';
+    }
+    
+    return (
+      <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
+        <img
+          src={imageUrl}
+          alt={`Preview ${index}`}
+          className="w-full h-full object-cover"
+        />
+        <button
+          type="button"
+          onClick={() => removeImage(index)}
+          className="absolute top-2 right-2 p-1 rounded-full bg-white/80 hover:bg-white"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -51,22 +93,7 @@ export function ImageUploadSection({ onChange, initialImages = [] }: ImageUpload
 
       {uploadedImages.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-          {uploadedImages.map((file, index) => (
-            <div key={index} className="relative aspect-square rounded-md overflow-hidden border">
-              <img
-                src={URL.createObjectURL(file)}
-                alt={`Preview ${index}`}
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute top-2 right-2 p-1 rounded-full bg-white/80 hover:bg-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+          {uploadedImages.map((file, index) => renderImagePreview(file, index))}
         </div>
       )}
     </FormSection>

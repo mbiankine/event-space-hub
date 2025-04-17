@@ -17,11 +17,11 @@ import { LogOut, User } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 export const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -51,7 +51,7 @@ export const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.avatar_url || ""} alt={user.email || ""} />
+                    <AvatarImage src={user.user_metadata?.avatar_url || ""} alt={user.email || ""} />
                     <AvatarFallback>{getUserInitials()}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -60,7 +60,7 @@ export const Header = () => {
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to={user.role === "host" ? "/host/dashboard" : "/client/dashboard"} className="cursor-pointer">
+                  <Link to={user.user_metadata?.account_type === "host" ? "/host/dashboard" : "/client/dashboard"} className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </Link>
