@@ -11,6 +11,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { BookingConfirmationView } from './booking/BookingConfirmationView';
 import { BookingConfirmationForm } from './booking/BookingConfirmationForm';
 
+interface BookingFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (values: any) => Promise<{ success: boolean; bookingId?: string }>;
+  onProceedToPayment: () => void;
+  form: any;
+  space: any;
+  isSubmitting: boolean;
+  bookingConfirmed: boolean;
+  isProcessingPayment: boolean;
+}
+
 export function BookingFormModal({
   isOpen,
   onClose,
@@ -21,7 +33,7 @@ export function BookingFormModal({
   isSubmitting,
   bookingConfirmed,
   isProcessingPayment,
-}) {
+}: BookingFormModalProps) {
   const watch = form.watch();
   const { user, profile } = useAuth();
   

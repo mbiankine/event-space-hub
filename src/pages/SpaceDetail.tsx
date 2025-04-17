@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -112,7 +113,6 @@ const SpaceDetail = () => {
           form={form}
           space={space}
           isSubmitting={isSubmitting}
-          isDateAvailable={(date) => !unavailableDates.some(d => d.getTime() === date.getTime())}
           bookingConfirmed={bookingConfirmed}
           isProcessingPayment={false}
         />
