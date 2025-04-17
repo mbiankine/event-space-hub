@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -6,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { LoadingState } from "@/components/host/LoadingState";
 import { SpaceDetailContent } from "@/components/space/SpaceDetailContent";
 import { AuthDialog } from "@/components/space/AuthDialog";
-import { BookingFormModal } from "@/components/space/BookingFormModal";
+import { BookingFormModal } from "@/components/space/booking/modals/BookingFormModal";
 import { useSpaceDetail } from "@/hooks/useSpaceDetail";
 import { useSpaceBooking } from "@/hooks/useSpaceBooking";
 import { useBookingState } from "@/hooks/useBookingState";
