@@ -45,13 +45,14 @@ const BookingDetail = () => {
           return;
         }
 
-        // Add payment_method with default value if it doesn't exist
-        const bookingWithPaymentMethod = {
+        // First create a temporary object with the optional property
+        const tempBooking: any = {
           ...bookingData,
           payment_method: bookingData.payment_method || 'card'
-        } as Booking;
+        };
 
-        setBooking(bookingWithPaymentMethod);
+        // Then set it to state with the proper type assertion
+        setBooking(tempBooking as Booking);
 
         if (bookingData.space_id) {
           const { data: spaceData, error: spaceError } = await supabase
@@ -156,7 +157,7 @@ const BookingDetail = () => {
               </Link>
             </Button>
             <h1 className="text-3xl font-bold mb-2">Detalhes da Reserva</h1>
-            <p className="text-muted-foreground">{booking.space_title || "Espaço reservado"}</p>
+            <p className="text-muted-foreground">{booking?.space_title || "Espaço reservado"}</p>
           </div>
           <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
             <Sheet>
@@ -168,7 +169,7 @@ const BookingDetail = () => {
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
-                  <SheetTitle>Conversa com {booking.client_name || "Cliente"}</SheetTitle>
+                  <SheetTitle>Conversa com {booking?.client_name || "Cliente"}</SheetTitle>
                   <SheetDescription>Envie mensagens sobre esta reserva</SheetDescription>
                 </SheetHeader>
                 <div className="h-full flex flex-col justify-center items-center">
@@ -177,19 +178,37 @@ const BookingDetail = () => {
               </SheetContent>
             </Sheet>
 
-            <BookingStatusActions 
-              booking={booking} 
-              user={user} 
-              onStatusUpdate={(newStatus) => setBooking({ ...booking, status: newStatus })}
-            />
+            {booking && user && (
+              <BookingStatusActions 
+                booking={booking} 
+                user={user} 
+                onStatusUpdate={(newStatus) => setBooking(booking ? { ...booking, status: newStatus } : null)}
+              />
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <BookingMainInfo booking={booking} formatDate={formatDate} />
+          {booking && (
+            <BookingMainInfo 
+              booking={booking} 
+              formatDate={(date: string) => {
+                if (!date) return "Não definido";
+                
+                const options: Intl.DateTimeFormatOptions = { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                };
+                
+                const dateObj = new Date(date);
+                return dateObj.toLocaleDateString('pt-BR', options);
+              }} 
+            />
+          )}
 
           <Card className="md:col-span-2">
-            <BookingClientInfo client={client} booking={booking} />
+            <BookingClientInfo client={client} booking={booking as any} />
             <BookingSpaceInfo space={space} />
           </Card>
         </div>
