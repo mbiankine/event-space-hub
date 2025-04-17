@@ -10,7 +10,7 @@ interface PaymentDetailsProps {
     additional_services_price: number | null;
     service_fee: number | null;
     total_price: number | null;
-    payment_status: string;
+    payment_status: string | null;
     payment_method?: string;
     status: string | null;
   };
@@ -24,7 +24,9 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
     }).format(value);
   };
 
-  const getPaymentStatusBadge = (status: string) => {
+  const getPaymentStatusBadge = (status: string | null) => {
+    if (!status) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    
     switch (status) {
       case 'paid':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Pago</Badge>;
@@ -37,6 +39,8 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
   };
 
   const getBookingStatusBadge = (status: string | null) => {
+    if (!status) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    
     switch (status) {
       case 'confirmed':
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Confirmado</Badge>;
@@ -90,13 +94,13 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
         <div className="flex items-center justify-between">
           <span>Status do Pagamento</span>
           <span className="inline-flex items-center">
-            {getPaymentStatusBadge(booking.payment_status || 'pending')}
+            {getPaymentStatusBadge(booking.payment_status)}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <span>Status da Reserva</span>
           <span className="inline-flex items-center">
-            {getBookingStatusBadge(booking.status || 'pending')}
+            {getBookingStatusBadge(booking.status)}
           </span>
         </div>
         <Separator />
