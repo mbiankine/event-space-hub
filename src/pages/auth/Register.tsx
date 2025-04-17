@@ -1,5 +1,4 @@
-
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
+import { ProfileCompletion } from '@/components/auth/ProfileCompletion';
 
 const registerSchema = z.object({
   fullName: z.string().min(3, 'Nome completo deve ter pelo menos 3 caracteres'),
@@ -38,13 +38,12 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') || '/';
   
-  // Check if the URL has a type parameter (for direct link to host registration)
   const params = new URLSearchParams(location.search);
   const initialAccountType = params.get('type') === 'host' ? 'host' : 'client';
   
   const [accountType, setAccountType] = React.useState<'client' | 'host'>(initialAccountType);
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
 
-  // If user is already logged in, redirect to return URL or dashboard
   useEffect(() => {
     if (user) {
       navigate(returnUrl);
@@ -62,22 +61,32 @@ const Register = () => {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
-    console.log('Submitting registration form:', { ...data, accountType });
+    if (!data.password === data.confirmPassword) {
+      toast.error("As senhas não conferem");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const result = await signUp(data.email, data.password, data.fullName, accountType);
       
       if (result.success) {
+        setShowProfileCompletion(true);
         toast.success(`Conta de ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} criada com sucesso!`);
-        toast.info('Por favor, faça login com suas credenciais.');
-        // Navigate to login with the return URL
-        navigate(`/auth/login${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
       } else if (result.error) {
         toast.error(result.error.message || 'Erro ao criar conta');
       }
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
       console.error('Registration error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleProfileComplete = () => {
+    setShowProfileCompletion(false);
+    navigate(`/auth/login${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
   };
 
   return (
@@ -193,6 +202,10 @@ const Register = () => {
           </Form>
         </CardContent>
       </Card>
+      <ProfileCompletion 
+        open={showProfileCompletion} 
+        onComplete={handleProfileComplete}
+      />
     </div>
   );
 };

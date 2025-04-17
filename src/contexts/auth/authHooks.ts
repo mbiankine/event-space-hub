@@ -11,7 +11,18 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile | nu
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Ensure all required fields from UserProfile interface are present
+    const profile: UserProfile = {
+      id: data.id,
+      username: data.username,
+      avatar_url: data.avatar_url,
+      full_name: data.full_name,
+      bio: data.bio,
+      phone: data.phone
+    };
+    
+    return profile;
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return null;

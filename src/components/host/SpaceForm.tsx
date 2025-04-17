@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -90,14 +89,18 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     form.setValue("images", images);
   };
 
-  const handleSubmitForm = (values: SpaceFormValues) => {
-    console.log("Form submitted with values:", values);
-    onSubmit(values);
+  const handleSubmit = async (values: SpaceFormValues) => {
+    try {
+      await onSubmit(values);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error("Erro ao salvar espaço");
+    }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-6 text-foreground">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-foreground">
         {/* Basic Information */}
         <BasicInfoSection control={form.control} />
         
