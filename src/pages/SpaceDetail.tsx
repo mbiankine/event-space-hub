@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
@@ -15,7 +14,6 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 
-// Import refactored components
 import { SpaceHeader } from "@/components/space/SpaceHeader";
 import { SpaceGallery } from "@/components/space/SpaceGallery";
 import { SpaceAmenities } from "@/components/space/SpaceAmenities";
@@ -56,27 +54,21 @@ const SpaceDetail = () => {
   const location = useLocation();
   const { user, profile, isLoading: isAuthLoading } = useAuth();
   
-  // Check for return URL from login/register
   useEffect(() => {
-    // Check if there's saved booking data in localStorage after login
     const pendingBooking = localStorage.getItem('pendingBookingSpace');
     if (pendingBooking && user) {
       try {
         const bookingData = JSON.parse(pendingBooking);
         if (bookingData.spaceId === id) {
-          // Restore booking state
           if (bookingData.date) setDate(new Date(bookingData.date));
           if (bookingData.guests) setGuests(bookingData.guests);
           if (bookingData.bookingType) setBookingType(bookingData.bookingType);
           if (bookingData.selectedHours) setSelectedHours(bookingData.selectedHours);
           if (bookingData.selectedDays) setSelectedDays(bookingData.selectedDays);
-          
-          // Open booking modal automatically
           setTimeout(() => {
             handleBookNow();
           }, 500);
         }
-        // Clear the pending booking data
         localStorage.removeItem('pendingBookingSpace');
       } catch (error) {
         console.error("Error parsing saved booking data:", error);
@@ -101,7 +93,6 @@ const SpaceDetail = () => {
     },
   });
   
-  // Update form fields when user profile loads
   useEffect(() => {
     if (user && profile) {
       form.setValue('name', profile.full_name || '');
@@ -124,17 +115,14 @@ const SpaceDetail = () => {
         if (error) throw error;
         setSpace(data);
         
-        // After loading space, process available dates
         if (data.availability && data.availability.length > 0) {
           const availableDatesArray = data.availability.map((dateStr: string) => new Date(dateStr));
           setAvailableDates(availableDatesArray);
         }
         
-        // Load existing bookings for this space
         await loadBookings(data.id);
       } catch (error) {
         console.error('Error fetching space:', error);
-        // Navigate back if space not found
         navigate('/');
       } finally {
         setIsLoading(false);
@@ -144,7 +132,6 @@ const SpaceDetail = () => {
     fetchSpace();
   }, [id, navigate]);
   
-  // Load existing bookings to check availability
   const loadBookings = async (spaceId: string) => {
     try {
       const { data, error } = await supabase
@@ -164,7 +151,6 @@ const SpaceDetail = () => {
     }
   };
 
-  // Function to get image URLs from Supabase Storage
   const getImageUrls = (space: any) => {
     if (!space || !space.images) return [];
     
@@ -176,41 +162,35 @@ const SpaceDetail = () => {
     });
   };
   
-  // Function to check if a date is available
   const isDateAvailable = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
-    // If space has availability settings, check if this date is in the available dates
     if (availableDates.length > 0) {
       return availableDates.some(availableDate => 
         format(availableDate, 'yyyy-MM-dd') === dateStr
       );
     }
     
-    // Check if date is not in unavailableDates (bookings)
     return !unavailableDates.some(unavailableDate => 
       format(unavailableDate, 'yyyy-MM-dd') === dateStr
     );
   };
   
-  const handleBookNow = async () => {
+  const handleBookNow = async (): Promise<{ success: boolean }> => {
     if (!user) {
-      // If user is not logged in, show auth modal
       setIsAuthModalOpen(true);
       return { success: false };
     }
     
-    // If user is logged in, proceed with booking
     return proceedWithBooking();
   };
   
-  const proceedWithBooking = async () => {
+  const proceedWithBooking = async (): Promise<{ success: boolean }> => {
     if (!user || !space) {
       return { success: false };
     }
     
     try {
-      // Pre-fill form with current selections and user data
       form.setValue('date', date || new Date());
       form.setValue('guests', guests);
       form.setValue('hours', selectedHours);
@@ -219,7 +199,6 @@ const SpaceDetail = () => {
       form.setValue('name', profile?.full_name || '');
       form.setValue('bookingType', bookingType);
       
-      // Open booking form
       setIsAuthModalOpen(false);
       setIsBookingModalOpen(true);
       
@@ -231,7 +210,6 @@ const SpaceDetail = () => {
   };
   
   const redirectToLogin = () => {
-    // Save current booking state to localStorage
     localStorage.setItem('pendingBookingSpace', JSON.stringify({
       spaceId: id,
       date: date?.toISOString(),
@@ -241,15 +219,12 @@ const SpaceDetail = () => {
       selectedDays
     }));
     
-    // Close auth modal
     setIsAuthModalOpen(false);
     
-    // Redirect to login page with return URL
     navigate(`/auth/login?returnUrl=${encodeURIComponent(location.pathname)}`);
   };
   
   const redirectToRegister = () => {
-    // Save current booking state to localStorage
     localStorage.setItem('pendingBookingSpace', JSON.stringify({
       spaceId: id,
       date: date?.toISOString(),
@@ -259,10 +234,8 @@ const SpaceDetail = () => {
       selectedDays
     }));
     
-    // Close auth modal
     setIsAuthModalOpen(false);
     
-    // Redirect to register page with return URL
     navigate(`/auth/register?returnUrl=${encodeURIComponent(location.pathname)}`);
   };
   
@@ -271,7 +244,6 @@ const SpaceDetail = () => {
     
     setIsSubmitting(true);
     try {
-      // Calculate pricing based on booking type
       let basePrice = 0;
       
       if (values.bookingType === 'hourly') {
@@ -280,10 +252,8 @@ const SpaceDetail = () => {
         basePrice = space.price * (values.days || 1);
       }
       
-      // No service fee as requested
       const totalPrice = basePrice;
       
-      // Create booking in database
       const { data, error } = await supabase
         .from('bookings')
         .insert({
@@ -291,7 +261,7 @@ const SpaceDetail = () => {
           client_id: user.id,
           host_id: space.host_id,
           booking_date: format(values.date, 'yyyy-MM-dd'),
-          start_time: '10:00', // Default start time
+          start_time: '10:00',
           end_time: values.bookingType === 'hourly' ? 
             format(new Date(new Date().setHours(10 + values.hours, 0, 0, 0)), 'HH:mm') : 
             undefined,
@@ -303,7 +273,7 @@ const SpaceDetail = () => {
           client_phone: values.phone,
           space_title: space.title,
           space_price: basePrice,
-          service_fee: 0, // No service fee as requested
+          service_fee: 0,
           total_price: totalPrice,
           status: 'pending',
           payment_status: 'pending'
@@ -312,12 +282,10 @@ const SpaceDetail = () => {
       
       if (error) throw error;
       
-      // Show success message
       toast.success("Reserva criada com sucesso!", {
         description: "Agora você será redirecionado para o pagamento."
       });
       
-      // Close modal and reset form
       setIsBookingModalOpen(false);
       form.reset();
       
@@ -352,12 +320,8 @@ const SpaceDetail = () => {
     <div className="min-h-screen flex flex-col text-left">
       <Header />
       <main className="flex-1 container px-4 md:px-6 lg:px-8 py-6">
-        {/* Space Header Component */}
         <SpaceHeader title={space.title} location={space.location} />
-        
-        {/* Space Gallery Component */}
         <SpaceGallery imageUrls={imageUrls} title={space.title} />
-        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
             <div className="flex justify-between items-start mb-6">
@@ -379,12 +343,10 @@ const SpaceDetail = () => {
             
             <Separator className="my-6" />
             
-            {/* Space Amenities Component */}
             <SpaceAmenities amenities={space.amenities || []} />
           </div>
           
           <div>
-            {/* Booking Card Component */}
             <BookingCard 
               space={space}
               date={date}
@@ -403,7 +365,6 @@ const SpaceDetail = () => {
           </div>
         </div>
         
-        {/* Authentication Dialog */}
         <AuthDialog 
           isOpen={isAuthModalOpen} 
           onOpenChange={setIsAuthModalOpen}
@@ -411,7 +372,6 @@ const SpaceDetail = () => {
           onRegister={redirectToRegister}
         />
         
-        {/* Booking Form Modal */}
         <BookingFormModal
           isOpen={isBookingModalOpen}
           onClose={() => setIsBookingModalOpen(false)}

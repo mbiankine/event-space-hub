@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addHours, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -29,7 +28,7 @@ interface BookingCardProps {
   bookingType: "hourly" | "daily";
   setBookingType: (type: "hourly" | "daily") => void;
   isDateAvailable: (date: Date) => boolean;
-  handleBookNow: () => void;
+  handleBookNow: () => Promise<{ success: boolean }> | void;
 }
 
 export function BookingCard({
@@ -122,7 +121,8 @@ export function BookingCard({
 
       // Create booking record first
       const bookingResult = await handleBookNow();
-      if (!bookingResult?.success) {
+      // Fix: Check if bookingResult exists and has success property before accessing it
+      if (!bookingResult || (bookingResult && !bookingResult.success)) {
         throw new Error('Falha ao criar reserva');
       }
       
