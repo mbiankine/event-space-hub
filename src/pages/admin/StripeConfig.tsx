@@ -11,15 +11,18 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
 
 const StripeConfig = () => {
   const navigate = useNavigate();
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isProduction, setIsProduction] = useState(false);
   const [testApiKey, setTestApiKey] = useState("");
   const [prodApiKey, setProdApiKey] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [stripeConnected, setStripeConnected] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   if (!hasRole('admin')) {
     navigate('/');
@@ -29,23 +32,53 @@ const StripeConfig = () => {
   const handleSaveKeys = async () => {
     try {
       setIsLoading(true);
+      setErrorMessage("");
       
-      // In a real implementation, this would save keys securely via a function
-      const { error } = await supabase.functions.invoke('save-stripe-keys', {
+      // Validate input
+      if (!testApiKey || testApiKey.trim() === "") {
+        throw new Error("Chave de API de teste é obrigatória");
+      }
+      
+      if (isProduction && (!prodApiKey || prodApiKey.trim() === "")) {
+        throw new Error("Chave de API de produção é obrigatória no modo de produção");
+      }
+      
+      // Basic format validation
+      if (!testApiKey.startsWith('sk_test_')) {
+        throw new Error("A chave de API de teste deve começar com 'sk_test_'");
+      }
+      
+      if (isProduction && !prodApiKey.startsWith('sk_live_')) {
+        throw new Error("A chave de API de produção deve começar com 'sk_live_'");
+      }
+
+      // Save keys via edge function
+      const { data, error } = await supabase.functions.invoke('save-stripe-keys', {
         body: { 
-          testApiKey: testApiKey, 
-          prodApiKey: isProduction ? prodApiKey : null,
-          mode: isProduction ? 'production' : 'test'
+          testApiKey: testApiKey.trim(), 
+          prodApiKey: isProduction ? prodApiKey.trim() : null,
+          mode: isProduction ? 'production' : 'test',
+          webhookSecret: webhookSecret.trim() || null
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Function error:", error);
+        throw new Error(`Erro na função: ${error.message}`);
+      }
+      
+      if (data.error) {
+        console.error("API error:", data.error, data.details);
+        throw new Error(`Erro: ${data.error}`);
+      }
       
       setStripeConnected(true);
       toast.success("Configurações do Stripe salvas com sucesso!");
     } catch (error) {
       console.error("Error saving Stripe keys:", error);
-      toast.error("Erro ao salvar configurações do Stripe");
+      setErrorMessage(error.message || "Erro ao salvar configurações do Stripe");
+      toast.error(error.message || "Erro ao salvar configurações do Stripe");
+      setStripeConnected(false);
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +106,16 @@ const StripeConfig = () => {
           <h1 className="text-3xl font-bold mb-2">Configuração do Stripe</h1>
           <p className="text-muted-foreground">Gerencie a integração de pagamentos para a plataforma</p>
         </div>
+
+        {errorMessage && (
+          <div className="mb-6 p-4 border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 rounded-md">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <h3 className="font-semibold text-red-600 dark:text-red-400">Erro ao salvar configurações</h3>
+            </div>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-muted">
@@ -195,11 +238,23 @@ const StripeConfig = () => {
                 <Input 
                   type="password"
                   placeholder="whsec_..." 
+                  value={webhookSecret}
+                  onChange={(e) => setWebhookSecret(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
                   Secret para verificar webhooks do Stripe.
                 </p>
               </div>
+
+              {errorMessage && (
+                <div className="mt-4">
+                  <Textarea 
+                    readOnly
+                    value={errorMessage}
+                    className="h-24 text-red-600 bg-red-50 dark:bg-red-900/10 border-red-200"
+                  />
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Button className="w-full" onClick={handleSaveKeys} disabled={isLoading}>
