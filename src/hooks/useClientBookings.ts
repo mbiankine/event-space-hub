@@ -52,7 +52,7 @@ export const useClientBookings = (user: User | null) => {
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
           images: booking.spaces?.images,
-          location: booking.spaces?.location || booking.location,
+          location: booking.spaces?.location,
           host_id: booking.spaces?.host_id || booking.host_id
         }));
         
@@ -79,7 +79,7 @@ export const useClientBookings = (user: User | null) => {
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
           images: booking.spaces?.images,
-          location: booking.spaces?.location || booking.location,
+          location: booking.spaces?.location,
           host_id: booking.spaces?.host_id || booking.host_id
         }));
         

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -10,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { MessagesThread } from '@/components/client/MessagesThread';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 const BookingDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,7 +68,7 @@ const BookingDetails = () => {
           space_title: data.spaces?.title || data.space_title,
           images: data.spaces?.images,
           description: data.spaces?.description,
-          location: data.spaces?.location || data.location,
+          location: data.spaces?.location,
           capacity: data.spaces?.capacity,
           host_id: data.spaces?.host_id || data.host_id
         });
@@ -144,6 +144,26 @@ const BookingDetails = () => {
     }
     
     return 'Endereço indisponível';
+  };
+  
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Pago</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    }
+  };
+  
+  const getBookingStatusBadge = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Confirmado</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Cancelado</Badge>;
+      default:
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
+    }
   };
   
   if (isLoading) {
@@ -265,28 +285,14 @@ const BookingDetails = () => {
                       </div>
                       <div className="flex items-center">
                         <CreditCard className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span className={`${
-                          booking.payment_status === 'paid' 
-                            ? 'text-green-600' 
-                            : 'text-yellow-600'
-                        } font-medium`}>
-                          Pagamento: {booking.payment_status === 'paid' ? 'Pago' : 'Pendente'}
+                        <span className="inline-flex items-center">
+                          Pagamento: {getPaymentStatusBadge(booking.payment_status)}
                         </span>
                       </div>
                       <div className="flex items-center">
                         <CreditCard className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span className={`${
-                          booking.status === 'confirmed' 
-                            ? 'text-blue-600' 
-                            : booking.status === 'cancelled'
-                              ? 'text-red-600'
-                              : 'text-yellow-600'
-                        } font-medium`}>
-                          Status: {booking.status === 'confirmed' 
-                                  ? 'Confirmado' 
-                                  : booking.status === 'cancelled' 
-                                    ? 'Cancelado' 
-                                    : 'Pendente'}
+                        <span className="inline-flex items-center">
+                          Status: {getBookingStatusBadge(booking.status)}
                         </span>
                       </div>
                     </div>
