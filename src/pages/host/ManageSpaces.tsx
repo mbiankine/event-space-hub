@@ -3,14 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { SpacesList } from '@/components/host/SpacesList';
-import { EmptyStateCard } from '@/components/host/EmptyStateCard';
 import { Space } from '@/types/SpaceTypes';
+import { PageHeader } from '@/components/host/PageHeader';
+import { LoadingState } from '@/components/host/LoadingState';
+import { EmptyStateCard } from '@/components/host/EmptyStateCard';
+import { SpacesGrid } from '@/components/host/SpacesGrid';
 
 const ManageSpaces = () => {
   const [spaces, setSpaces] = useState<Space[]>([]);
