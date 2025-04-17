@@ -41,7 +41,7 @@ const AddNewSpace = () => {
       ];
 
       // Prepare space data with pricing options
-      const spaceData: any = {
+      const spaceToInsert: any = {
         title: values.title,
         description: values.description,
         location: locationData,
@@ -55,17 +55,17 @@ const AddNewSpace = () => {
 
       // Handle different pricing types
       if (values.pricingType === 'daily' || values.pricingType === 'both') {
-        spaceData.price = values.price;
+        spaceToInsert.price = values.price;
       }
       
       if (values.pricingType === 'hourly' || values.pricingType === 'both') {
-        spaceData.hourly_price = values.hourlyPrice;
+        spaceToInsert.hourly_price = values.hourlyPrice;
       }
 
       // 1. First upload the space data
-      const { data: spaceData, error: spaceError } = await supabase
+      const { data: insertedSpaceData, error: spaceError } = await supabase
         .from('spaces')
-        .insert(spaceData)
+        .insert(spaceToInsert)
         .select()
         .single();
 
@@ -75,7 +75,7 @@ const AddNewSpace = () => {
       if (values.images && values.images.length > 0) {
         const uploadPromises = values.images.map(async (file: File, index: number) => {
           const fileExt = file.name.split('.').pop();
-          const fileName = `${spaceData.id}/${index}-${Date.now()}.${fileExt}`;
+          const fileName = `${insertedSpaceData.id}/${index}-${Date.now()}.${fileExt}`;
           const filePath = `spaces/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
@@ -95,7 +95,7 @@ const AddNewSpace = () => {
           .update({
             images: uploadedPaths
           })
-          .eq('id', spaceData.id);
+          .eq('id', insertedSpaceData.id);
           
         if (updateError) throw updateError;
       }
