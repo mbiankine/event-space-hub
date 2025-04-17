@@ -143,7 +143,7 @@ const SpaceDetail = () => {
         .from('bookings')
         .select('booking_date')
         .eq('space_id', spaceId)
-        .eq('status', 'confirmed');
+        .or('status.eq.confirmed,payment_status.eq.paid');
       
       if (error) throw error;
       
@@ -170,15 +170,21 @@ const SpaceDetail = () => {
   const isDateAvailable = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
+    const isUnavailable = unavailableDates.some(unavailableDate => 
+      format(unavailableDate, 'yyyy-MM-dd') === dateStr
+    );
+    
+    if (isUnavailable) {
+      return false;
+    }
+    
     if (availableDates.length > 0) {
       return availableDates.some(availableDate => 
         format(availableDate, 'yyyy-MM-dd') === dateStr
       );
     }
     
-    return !unavailableDates.some(unavailableDate => 
-      format(unavailableDate, 'yyyy-MM-dd') === dateStr
-    );
+    return true;
   };
   
   const handleBookNow = async (): Promise<{ success: boolean, bookingId?: string }> => {

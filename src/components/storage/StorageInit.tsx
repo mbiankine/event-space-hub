@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const StorageInit = () => {
   useEffect(() => {
@@ -19,21 +20,16 @@ export const StorageInit = () => {
         const spacesBucketExists = buckets?.some(bucket => bucket.name === 'spaces');
         
         if (!spacesBucketExists) {
-          // Create the spaces bucket
-          const { data, error } = await supabase
-            .storage
-            .createBucket('spaces', { 
-              public: true,  // Make bucket public
-              fileSizeLimit: 10485760  // 10MB limit
-            });
+          // We'll log that we need admin privileges to create the bucket
+          console.log('Spaces bucket does not exist. Admin privileges required to create it.');
           
-          if (error) {
-            console.error('Error creating spaces bucket:', error);
-          } else {
-            console.log('Spaces bucket created successfully:', data);
+          // Skip bucket creation attempt for regular users
+          if (!supabase.auth.getUser) {
+            return;
           }
         }
       } catch (error) {
+        // Just log the error but don't show a toast to users
         console.error('Storage initialization error:', error);
       }
     };

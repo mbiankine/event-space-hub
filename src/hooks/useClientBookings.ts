@@ -9,59 +9,54 @@ export const useClientBookings = (user: User | null) => {
   const [currentBookings, setCurrentBookings] = useState<ClientBooking[]>([]);
   const [pastBookings, setPastBookings] = useState<ClientBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchBookings = async () => {
-      if (!user) return;
+      if (!user) {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+        return;
+      }
       
       try {
         setIsLoading(true);
+        setError(null);
         console.log("Fetching bookings for user ID:", user.id);
         
         const today = new Date().toISOString().split('T')[0];
         
-        // Try to get active bookings from view first
-        const { data: activeBookings, error: activeError } = await supabase
-          .from('active_bookings')
-          .select('*')
+        // Get current bookings
+        const { data: currentBookingsData, error: currentError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            spaces (
+              title,
+              images,
+              location,
+              host_id
+            )
+          `)
           .eq('client_id', user.id)
           .gte('booking_date', today)
           .order('booking_date', { ascending: true });
-          
-        if (activeError) {
-          console.error("Error fetching from active_bookings view:", activeError);
-          // Fallback to direct bookings query
-          const { data: directBookings, error: directError } = await supabase
-            .from('bookings')
-            .select(`
-              *,
-              spaces (
-                title,
-                images,
-                location,
-                host_id
-              )
-            `)
-            .eq('client_id', user.id)
-            .gte('booking_date', today)
-            .order('booking_date', { ascending: true });
-          
-          if (directError) throw directError;
-          
-          const formattedBookings = directBookings.map((booking) => ({
-            ...booking,
-            space_title: booking.spaces?.title || booking.space_title,
-            images: booking.spaces?.images,
-            location: booking.spaces?.location,
-            host_id: booking.spaces?.host_id || booking.host_id
-          }));
-          
-          setCurrentBookings(formattedBookings || []);
-        } else {
-          setCurrentBookings(activeBookings || []);
-        }
         
-        // Fetch past bookings
+        if (currentError) throw currentError;
+        
+        // Format current bookings
+        const formattedCurrentBookings = currentBookingsData.map((booking) => ({
+          ...booking,
+          space_title: booking.spaces?.title || booking.space_title,
+          images: booking.spaces?.images,
+          location: booking.spaces?.location,
+          host_id: booking.spaces?.host_id || booking.host_id
+        }));
+        
+        // Get past bookings
         const { data: pastBookingsData, error: pastError } = await supabase
           .from('bookings')
           .select(`
@@ -79,6 +74,7 @@ export const useClientBookings = (user: User | null) => {
           
         if (pastError) throw pastError;
         
+        // Format past bookings
         const pastBookingsFormatted = pastBookingsData.map((booking) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
@@ -87,21 +83,33 @@ export const useClientBookings = (user: User | null) => {
           host_id: booking.spaces?.host_id || booking.host_id
         }));
         
-        setPastBookings(pastBookingsFormatted || []);
-        console.log("Fetched bookings:", {
-          current: activeBookings?.length || 0,
-          past: pastBookingsFormatted?.length || 0
-        });
-      } catch (error) {
+        if (isMounted) {
+          setCurrentBookings(formattedCurrentBookings);
+          setPastBookings(pastBookingsFormatted);
+          console.log("Fetched bookings:", {
+            current: formattedCurrentBookings.length || 0,
+            past: pastBookingsFormatted.length || 0
+          });
+        }
+      } catch (error: any) {
         console.error('Error fetching bookings:', error);
-        toast.error('Erro ao carregar suas reservas. Tente novamente.');
+        if (isMounted) {
+          setError(error.message);
+          toast.error('Erro ao carregar suas reservas. Tente novamente.');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     fetchBookings();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
-  return { currentBookings, pastBookings, isLoading };
+  return { currentBookings, pastBookings, isLoading, error };
 };

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,10 +16,26 @@ import {
   CardContent, 
   CardFooter 
 } from "@/components/ui/card";
+import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 
 const ClientDashboard = () => {
   const { user } = useAuth();
-  const { currentBookings, pastBookings, isLoading } = useClientBookings(user);
+  const { currentBookings, pastBookings, isLoading, error } = useClientBookings(user);
+  
+  useEffect(() => {
+    if (error) {
+      toast.error('Erro ao carregar seus dados', {
+        description: 'Tente recarregar a página em alguns instantes.',
+        action: {
+          label: 'Tentar novamente',
+          onClick: () => window.location.reload(),
+        },
+        icon: <AlertCircle />,
+        duration: 5000,
+      });
+    }
+  }, [error]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -59,6 +74,21 @@ const ClientDashboard = () => {
                   </Card>
                 ))}
               </div>
+            ) : error ? (
+              <Card className="p-6 text-center">
+                <CardContent className="pt-6 pb-4">
+                  <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+                  <h3 className="text-xl font-medium mb-2">
+                    Erro ao carregar reservas
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Não foi possível carregar suas reservas atuais. Tente novamente em alguns instantes.
+                  </p>
+                  <Button onClick={() => window.location.reload()}>
+                    Tentar novamente
+                  </Button>
+                </CardContent>
+              </Card>
             ) : (
               <ClientBookingsList bookings={currentBookings} type="current" />
             )}
@@ -85,6 +115,21 @@ const ClientDashboard = () => {
                   </Card>
                 ))}
               </div>
+            ) : error ? (
+              <Card className="p-6 text-center">
+                <CardContent className="pt-6 pb-4">
+                  <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+                  <h3 className="text-xl font-medium mb-2">
+                    Erro ao carregar histórico
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Não foi possível carregar seu histórico de reservas. Tente novamente em alguns instantes.
+                  </p>
+                  <Button onClick={() => window.location.reload()}>
+                    Tentar novamente
+                  </Button>
+                </CardContent>
+              </Card>
             ) : (
               <ClientBookingsList bookings={pastBookings} type="past" />
             )}
