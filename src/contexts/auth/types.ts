@@ -19,7 +19,7 @@ export interface AuthContextType {
   accountType: UserRole | null;
   isLoading: boolean;
   signIn: (email: string, password: string, accountType: UserRole) => Promise<void>;
-  signUp: (email: string, password: string, fullName?: string, accountType?: UserRole) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string, accountType?: UserRole) => Promise<{success: boolean, error?: Error}>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
 }
