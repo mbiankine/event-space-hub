@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addHours, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -57,7 +56,6 @@ export function BookingCard({
   const [isStripeConfigMissing, setIsStripeConfigMissing] = useState(false);
   const { startStripeCheckout } = useStripeConfig();
   
-  // Calculate total price based on pricing type and booking type
   const calculatePrice = () => {
     if (bookingType === 'hourly' && space.hourly_price) {
       return space.hourly_price * selectedHours;
@@ -67,10 +65,8 @@ export function BookingCard({
     return space.price;
   };
   
-  // No service fee as requested
   const totalPrice = calculatePrice();
 
-  // Helper functions to handle state updates correctly
   const decreaseGuests = () => {
     const newValue = Math.max(1, guests - 25);
     setGuests(newValue);
@@ -102,18 +98,15 @@ export function BookingCard({
   };
 
   const handleReserveClick = async () => {
-    // If user is not logged in, initiate the booking process that will lead to auth dialog
     if (!user) {
       handleBookNow();
       return;
     }
 
-    // If user is logged in, proceed directly with booking
     try {
       setIsProcessingPayment(true);
       setPaymentError(null);
 
-      // Create booking record first
       const bookingResult = await handleBookNow();
       if (!bookingResult || !bookingResult.success) {
         throw new Error('Falha ao criar reserva');
@@ -125,6 +118,29 @@ export function BookingCard({
       setIsErrorDialogOpen(true);
       setIsProcessingPayment(false);
     }
+  };
+
+  const handleProceedToPayment = async () => {
+    if (!confirmedBookingId || !space) {
+      console.error("Missing booking ID or space details for payment");
+      toast.error("Dados incompletos para pagamento");
+      return;
+    }
+
+    console.log(`Proceeding to payment for booking: ${confirmedBookingId}`);
+    let price = 0;
+    let days;
+    
+    if (bookingType === 'hourly') {
+      price = (space.hourly_price || 0) * selectedHours;
+    } else {
+      price = space.price * selectedDays;
+      days = selectedDays;
+    }
+    
+    console.log(`Calculated price: ${price}, Days: ${days || 'N/A'}`);
+    const result = await startStripeCheckout(space.id, price, days, confirmedBookingId);
+    console.log(`Stripe checkout result: ${result ? 'Success' : 'Failed'}`);
   };
 
   return (
@@ -143,7 +159,6 @@ export function BookingCard({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Pricing Type Selection */}
           {space.pricing_type === 'both' && (
             <div className="mb-4">
               <h4 className="font-medium mb-2">Tipo de Reserva</h4>

@@ -194,10 +194,12 @@ serve(async (req) => {
     // Se temos um booking_id, atualizamos o registro com o session_id
     if (booking_id) {
       console.log(`Updating booking ${booking_id} with session_id ${session.id}`);
+      
+      // Modify this part - don't try to update a non-existent column
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
         .update({ 
-          stripe_session_id: session.id,
+          payment_intent: session.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', booking_id);

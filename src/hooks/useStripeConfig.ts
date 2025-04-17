@@ -17,6 +17,8 @@ export function useStripeConfig() {
         return false;
       }
       
+      console.log(`Starting checkout for space: ${spaceId}, price: ${price}, days: ${days}, booking: ${bookingId}`);
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { 
           space_id: spaceId, 
@@ -28,7 +30,10 @@ export function useStripeConfig() {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Checkout error from function:", error);
+        throw error;
+      }
       
       if (data?.url) {
         // Show a toast notification before redirecting
@@ -41,6 +46,7 @@ export function useStripeConfig() {
         
         return true;
       } else {
+        console.error("No checkout URL returned:", data);
         throw new Error('Não foi possível iniciar o checkout');
       }
       

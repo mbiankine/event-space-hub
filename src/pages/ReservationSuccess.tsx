@@ -23,18 +23,25 @@ const ReservationSuccess = () => {
       try {
         setIsLoading(true);
         
-        // Primeiro, verificamos se existe uma reserva pendente relacionada a este ID de sessão
+        // First, look for bookings that may be related to this session ID via the payment_intent field
+        console.log("Looking for booking with session ID:", sessionId);
         const { data: bookingData, error: bookingError } = await supabase
           .from('bookings')
           .select('*')
-          .eq('payment_status', 'pending')
-          .order('created_at', { ascending: false })
+          .eq('payment_intent', sessionId)
           .limit(1);
         
-        if (bookingError) throw bookingError;
+        if (bookingError) {
+          console.error("Error looking up booking by session ID:", bookingError);
+          throw bookingError;
+        }
         
+        // If we found a booking by payment_intent
         if (bookingData && bookingData.length > 0) {
-          // Atualizamos o status da reserva para "paid" e "confirmed"
+          console.log("Found booking by payment_intent:", bookingData[0].id);
+          const booking = bookingData[0];
+          
+          // Update the booking status
           const { data: updatedBooking, error: updateError } = await supabase
             .from('bookings')
             .update({
@@ -42,24 +49,73 @@ const ReservationSuccess = () => {
               status: 'confirmed',
               updated_at: new Date().toISOString()
             })
-            .eq('id', bookingData[0].id)
+            .eq('id', booking.id)
             .select();
           
-          if (updateError) throw updateError;
+          if (updateError) {
+            console.error("Error updating booking:", updateError);
+            throw updateError;
+          }
           
           setBookingDetails({
-            id: bookingData[0].id,
+            id: booking.id,
             status: 'confirmed',
-            space_title: bookingData[0].space_title
+            space_title: booking.space_title
           });
           
           toast.success('Pagamento confirmado com sucesso!');
-        } else {
-          // Se não encontrarmos uma reserva pendente, mostramos uma mensagem genérica
-          setBookingDetails({
-            id: sessionId.substring(0, 8),
-            status: 'confirmed'
-          });
+        } 
+        // Fallback to look for recent pending bookings
+        else {
+          console.log("No booking found by payment_intent, looking for recent pending bookings");
+          const { data: pendingBookings, error: pendingError } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('payment_status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (pendingError) {
+            console.error("Error looking up pending bookings:", pendingError);
+            throw pendingError;
+          }
+          
+          if (pendingBookings && pendingBookings.length > 0) {
+            console.log("Found recent pending booking:", pendingBookings[0].id);
+            const booking = pendingBookings[0];
+            
+            // Update the booking with both payment_status and the session ID
+            const { data: updatedBooking, error: updateError } = await supabase
+              .from('bookings')
+              .update({
+                payment_status: 'paid',
+                status: 'confirmed',
+                payment_intent: sessionId,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', booking.id)
+              .select();
+            
+            if (updateError) {
+              console.error("Error updating booking:", updateError);
+              throw updateError;
+            }
+            
+            setBookingDetails({
+              id: booking.id,
+              status: 'confirmed',
+              space_title: booking.space_title
+            });
+            
+            toast.success('Pagamento confirmado com sucesso!');
+          } else {
+            // If we still can't find anything, show generic confirmation
+            console.log("No related booking found, showing generic confirmation");
+            setBookingDetails({
+              id: sessionId.substring(0, 8),
+              status: 'confirmed'
+            });
+          }
         }
       } catch (error: any) {
         console.error('Error verifying payment:', error);
