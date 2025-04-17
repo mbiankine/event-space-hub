@@ -81,7 +81,7 @@ export function usePaymentVerification(sessionId: string | null) {
             .from('bookings')
             .update({
               payment_status: 'paid',
-              status: 'confirmed',
+              status: 'confirmed', // Always set status to confirmed when payment is successful
               payment_intent: sessionId,
               updated_at: new Date().toISOString()
             })

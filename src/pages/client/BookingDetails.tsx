@@ -49,12 +49,26 @@ const BookingDetails = () => {
           throw new Error('Reserva não encontrada');
         }
         
+        // If payment is paid but status is still pending, update to confirmed
+        if (data.payment_status === 'paid' && data.status === 'pending') {
+          const { error: updateError } = await supabase
+            .from('bookings')
+            .update({ status: 'confirmed' })
+            .eq('id', data.id);
+          
+          if (updateError) {
+            console.error('Error updating booking status:', updateError);
+          } else {
+            data.status = 'confirmed';
+          }
+        }
+        
         setBooking({
           ...data,
           space_title: data.spaces?.title || data.space_title,
           images: data.spaces?.images,
           description: data.spaces?.description,
-          location: data.spaces?.location,
+          location: data.spaces?.location || data.location,
           capacity: data.spaces?.capacity,
           host_id: data.spaces?.host_id || data.host_id
         });
@@ -68,6 +82,26 @@ const BookingDetails = () => {
     };
     
     fetchBookingDetails();
+    
+    // Set up a subscription for real-time updates
+    const channel = supabase
+      .channel('booking-updates')
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'bookings',
+          filter: `id=eq.${id}` 
+        }, 
+        () => {
+          fetchBookingDetails();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id, user]);
   
   // Format date function
@@ -87,6 +121,29 @@ const BookingDetails = () => {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
+  };
+  
+  const getAddress = (location: any) => {
+    if (!location) return 'Endereço indisponível';
+    
+    if (typeof location === 'string') {
+      try {
+        location = JSON.parse(location);
+      } catch (e) {
+        return 'Endereço indisponível';
+      }
+    }
+    
+    if (location.address) return location.address;
+    if (location.street) {
+      return `${location.street}${location.number ? ', ' + location.number : ''}${location.city && location.state ? ' - ' + location.city + ', ' + location.state : ''}`;
+    }
+    
+    if (location.city && location.state) {
+      return `${location.city}, ${location.state}`;
+    }
+    
+    return 'Endereço indisponível';
   };
   
   if (isLoading) {
@@ -200,11 +257,7 @@ const BookingDetails = () => {
                     <div className="space-y-2">
                       <div className="flex items-center">
                         <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
-                        <span>
-                          {booking.location && booking.location.address 
-                            ? booking.location.address 
-                            : 'Endereço não disponível'}
-                        </span>
+                        <span>{getAddress(booking.location)}</span>
                       </div>
                       <div className="flex items-center">
                         <User className="h-5 w-5 mr-2 text-muted-foreground" />
@@ -217,7 +270,23 @@ const BookingDetails = () => {
                             ? 'text-green-600' 
                             : 'text-yellow-600'
                         } font-medium`}>
-                          Status: {booking.payment_status === 'paid' ? 'Pago' : 'Pendente'}
+                          Pagamento: {booking.payment_status === 'paid' ? 'Pago' : 'Pendente'}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CreditCard className="h-5 w-5 mr-2 text-muted-foreground" />
+                        <span className={`${
+                          booking.status === 'confirmed' 
+                            ? 'text-blue-600' 
+                            : booking.status === 'cancelled'
+                              ? 'text-red-600'
+                              : 'text-yellow-600'
+                        } font-medium`}>
+                          Status: {booking.status === 'confirmed' 
+                                  ? 'Confirmado' 
+                                  : booking.status === 'cancelled' 
+                                    ? 'Cancelado' 
+                                    : 'Pendente'}
                         </span>
                       </div>
                     </div>
@@ -265,7 +334,6 @@ const BookingDetails = () => {
           </div>
           
           <div className="lg:col-span-1">
-            {/* Only show messages if booking is paid */}
             {booking.payment_status === 'paid' ? (
               <MessagesThread 
                 contactId={booking.host_id}

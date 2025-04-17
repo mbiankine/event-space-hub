@@ -39,6 +39,63 @@ export const ClientBookingsList = ({ bookings, type }: ClientBookingsListProps) 
     return date.toLocaleDateString('pt-BR', options);
   };
 
+  const getAddress = (location: any) => {
+    if (!location) return 'Endereço indisponível';
+    
+    if (typeof location === 'string') {
+      try {
+        location = JSON.parse(location);
+      } catch (e) {
+        return 'Endereço indisponível';
+      }
+    }
+    
+    if (location.address) return location.address;
+    if (location.street) {
+      return `${location.street}${location.number ? ', ' + location.number : ''}${location.city && location.state ? ' - ' + location.city + ', ' + location.state : ''}`;
+    }
+    
+    if (location.city && location.state) {
+      return `${location.city}, ${location.state}`;
+    }
+    
+    return 'Endereço indisponível';
+  };
+
+  const getStatusDisplay = (booking: ClientBooking) => {
+    // Payment status display
+    const paymentStatusDisplay = booking.payment_status === 'paid' ? 'Pago' : 'Pendente';
+    const paymentStatusClass = booking.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+    
+    // Booking status display
+    let bookingStatusDisplay = '';
+    let bookingStatusClass = '';
+    
+    if (booking.status === 'confirmed' || (booking.payment_status === 'paid' && booking.status === 'pending')) {
+      bookingStatusDisplay = 'Confirmado';
+      bookingStatusClass = 'bg-blue-100 text-blue-800';
+    } else if (booking.status === 'pending') {
+      bookingStatusDisplay = 'Pendente';
+      bookingStatusClass = 'bg-yellow-100 text-yellow-800';
+    } else if (booking.status === 'cancelled') {
+      bookingStatusDisplay = 'Cancelado';
+      bookingStatusClass = 'bg-red-100 text-red-800';
+    }
+    
+    return (
+      <div className="mt-1 space-y-2">
+        <span className={`inline-block px-2 py-1 text-xs rounded-full ${paymentStatusClass}`}>
+          Pagamento: {paymentStatusDisplay}
+        </span>
+        {bookingStatusDisplay && (
+          <span className={`inline-block ml-2 px-2 py-1 text-xs rounded-full ${bookingStatusClass}`}>
+            Status: {bookingStatusDisplay}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   if (bookings.length === 0) {
     return (
       <Card className="p-6 text-center">
@@ -100,28 +157,14 @@ export const ClientBookingsList = ({ bookings, type }: ClientBookingsListProps) 
               )}
               <div className="flex items-center">
                 <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span className="text-sm">
-                  {booking.location && booking.location.address 
-                    ? booking.location.address 
-                    : 'Endereço não disponível'}
-                </span>
+                <span className="text-sm">{getAddress(booking.location)}</span>
               </div>
               {booking.total_price && (
                 <div className="mt-2 font-medium">
                   Total: {formatCurrency(booking.total_price)}
                 </div>
               )}
-              {booking.payment_status && (
-                <div className="mt-1">
-                  <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                    booking.payment_status === 'paid' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {booking.payment_status === 'paid' ? 'Pago' : 'Pendente'}
-                  </span>
-                </div>
-              )}
+              {getStatusDisplay(booking)}
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
