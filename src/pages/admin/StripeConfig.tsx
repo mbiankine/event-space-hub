@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, StripeIcon, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { ArrowLeft, StoreIcon, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 
 const StripeConfig = () => {
   const navigate = useNavigate();
