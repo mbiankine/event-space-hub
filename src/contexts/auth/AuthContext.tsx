@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,7 +92,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAccountType(accountType);
       console.log(`Sign in successful, redirecting to ${accountType} dashboard`);
       
-      if (accountType === 'host') {
+      // Redirect based on account type
+      if (accountType === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (accountType === 'host') {
         navigate('/host/dashboard');
       } else {
         navigate('/client/dashboard');

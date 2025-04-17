@@ -23,6 +23,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole, ch
   }
 
   if (requiredRole) {
+    // Special handling for admin role
+    if (requiredRole === 'admin' && roles.includes('admin')) {
+      return children ? <>{children}</> : <Outlet />;
+    }
+    
     // Se o usuário é anfitrião, ele pode acessar as rotas de cliente também
     if (requiredRole === 'client' && roles.includes('host')) {
       // Permitir acesso se o anfitrião tentar acessar a área do cliente
@@ -44,4 +49,4 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole, ch
   return children ? <>{children}</> : <Outlet />;
 };
 
-export default ProtectedRoute; // Add this line to provide a default export
+export default ProtectedRoute;
