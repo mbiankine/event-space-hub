@@ -33,9 +33,24 @@ export const useSpaceDetail = (id: string | undefined) => {
           throw new Error('Space not found');
         }
         
-        setSpace(data as Space);
+        // Cast the data.location from Json type to the expected location structure
+        const spaceData: Space = {
+          ...data,
+          location: data.location as {
+            city: string;
+            state: string;
+            street?: string;
+            number?: string;
+            complement?: string;
+            neighborhood?: string;
+            zipCode?: string;
+            country?: string;
+          }
+        };
         
-        // Processar disponibilidade apenas se existir e tiver comprimento > 0
+        setSpace(spaceData);
+        
+        // Process availability only if it exists and has length > 0
         if (data.availability && Array.isArray(data.availability) && data.availability.length > 0) {
           const availableDatesArray = data.availability.map((dateStr: string) => new Date(dateStr));
           setAvailableDates(availableDatesArray);
@@ -43,7 +58,7 @@ export const useSpaceDetail = (id: string | undefined) => {
           setAvailableDates([]);
         }
         
-        // Carregar reservas apenas se tivermos dados do espaço
+        // Load bookings only if we have space data
         await loadBookings(data.id);
       } catch (error) {
         console.error('Error in fetchSpace:', error);
