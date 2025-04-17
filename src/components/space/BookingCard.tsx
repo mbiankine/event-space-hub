@@ -56,6 +56,37 @@ export function BookingCard({
   // No service fee as requested
   const totalPrice = calculatePrice();
 
+  // Helper functions to handle state updates correctly
+  const decreaseGuests = () => {
+    const newValue = Math.max(1, guests - 25);
+    setGuests(newValue);
+  };
+
+  const increaseGuests = () => {
+    const newValue = Math.min(space.capacity, guests + 25);
+    setGuests(newValue);
+  };
+
+  const decreaseHours = () => {
+    const newValue = Math.max(1, selectedHours - 1);
+    setSelectedHours(newValue);
+  };
+
+  const increaseHours = () => {
+    const newValue = Math.min(24, selectedHours + 1);
+    setSelectedHours(newValue);
+  };
+
+  const decreaseDays = () => {
+    const newValue = Math.max(1, selectedDays - 1);
+    setSelectedDays(newValue);
+  };
+
+  const increaseDays = () => {
+    const newValue = Math.min(30, selectedDays + 1);
+    setSelectedDays(newValue);
+  };
+
   return (
     <Card className="sticky top-24">
       <CardHeader>
@@ -134,7 +165,7 @@ export function BookingCard({
               <Button 
                 variant="outline" 
                 size="icon" 
-                onClick={() => setGuests(prev => Math.max(1, prev - 25))}
+                onClick={decreaseGuests}
                 disabled={guests <= 1}
               >
                 -
@@ -143,7 +174,7 @@ export function BookingCard({
               <Button 
                 variant="outline" 
                 size="icon" 
-                onClick={() => setGuests(prev => Math.min(space.capacity, prev + 25))}
+                onClick={increaseGuests}
                 disabled={guests >= space.capacity}
               >
                 +
@@ -164,7 +195,7 @@ export function BookingCard({
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={() => setSelectedHours(prev => Math.max(1, prev - 1))}
+                  onClick={decreaseHours}
                   disabled={selectedHours <= 1}
                 >
                   -
@@ -173,7 +204,7 @@ export function BookingCard({
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={() => setSelectedHours(prev => Math.min(24, prev + 1))}
+                  onClick={increaseHours}
                   disabled={selectedHours >= 24}
                 >
                   +
@@ -193,7 +224,7 @@ export function BookingCard({
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={() => setSelectedDays(prev => Math.max(1, prev - 1))}
+                  onClick={decreaseDays}
                   disabled={selectedDays <= 1}
                 >
                   -
@@ -202,7 +233,7 @@ export function BookingCard({
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  onClick={() => setSelectedDays(prev => Math.min(30, prev + 1))}
+                  onClick={increaseDays}
                   disabled={selectedDays >= 30}
                 >
                   +
