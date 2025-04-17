@@ -56,8 +56,6 @@ export function usePaymentVerification(sessionId: string | null) {
             if (updateError) {
               console.error("Error updating booking status:", updateError);
             } else {
-              existingBooking.status = 'confirmed';
-              existingBooking.payment_status = 'paid';
               console.log("Updated booking payment status to paid");
             }
           }
