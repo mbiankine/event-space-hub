@@ -11,7 +11,7 @@ export const QuickMenu = () => {
   const location = useLocation();
   
   const isActive = (path: string) => {
-    return location.pathname === path;
+    return location.pathname.startsWith(path);
   };
 
   return (

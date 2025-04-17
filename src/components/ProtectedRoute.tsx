@@ -21,7 +21,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
   }
 
   if (requiredRole) {
-    // Anfitrião pode acessar as rotas de cliente
+    // Se o usuário é anfitrião, ele pode acessar as rotas de cliente também
     if (requiredRole === 'client' && roles.includes('host')) {
       // Permitir acesso se o anfitrião tentar acessar a área do cliente
       return <Outlet />;
@@ -29,16 +29,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
     
     // Verificar o papel do usuário normalmente
     if (!roles.includes(requiredRole)) {
-      // Redirect based on their account type
-      if (accountType === 'client') {
-        return <Navigate to="/client/dashboard" replace />;
-      } else if (accountType === 'host') {
-        return <Navigate to="/host/dashboard" replace />;
-      } else if (accountType === 'admin') {
-        return <Navigate to="/admin/dashboard" replace />;
-      } else {
-        return <Navigate to="/" replace />;
-      }
+      // Redirecionar com base no tipo de conta principal
+      const dashboardPath = `/${accountType}/dashboard`;
+      return <Navigate to={dashboardPath} replace />;
     }
   }
 
