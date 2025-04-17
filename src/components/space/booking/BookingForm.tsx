@@ -8,7 +8,7 @@ import { UseFormReturn } from "react-hook-form";
 
 interface BookingFormProps {
   form: UseFormReturn<any>;
-  onSubmit: (values: any) => Promise<void>;
+  onSubmit: (values: any) => Promise<{ success: boolean; bookingId?: string } | void>;
   isSubmitting: boolean;
 }
 
