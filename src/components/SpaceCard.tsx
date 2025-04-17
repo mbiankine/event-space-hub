@@ -40,7 +40,7 @@ export function SpaceCard({
             <HeartIcon className="h-4 w-4" />
           </Button>
         </div>
-        <CardContent className="p-4">
+        <CardContent className="p-4 text-left">
           <div className="flex justify-between items-start">
             <h3 className="font-medium text-base">{title}</h3>
             <div className="flex items-center gap-1">
@@ -51,7 +51,7 @@ export function SpaceCard({
           <p className="text-sm text-muted-foreground">{location}</p>
           <p className="text-sm text-muted-foreground">{available}</p>
         </CardContent>
-        <CardFooter className="px-4 pb-4 pt-0">
+        <CardFooter className="px-4 pb-4 pt-0 text-left">
           <p className="font-medium">
             R$ {price} <span className="font-normal">/ diária</span>
           </p>
