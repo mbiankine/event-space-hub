@@ -25,11 +25,14 @@ serve(async (req) => {
     httpClient: Stripe.createFetchHttpClient(),
   });
 
+  // Use the provided webhook secret or get it from environment
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
   if (!webhookSecret) {
     console.error("STRIPE_WEBHOOK_SECRET not found");
     return new Response(JSON.stringify({ error: "Webhook secret not configured" }), { status: 500 });
   }
+
+  console.log("Using webhook secret:", webhookSecret.substring(0, 5) + "...");
 
   try {
     // Get the signature from the headers
@@ -76,7 +79,7 @@ serve(async (req) => {
             console.error("Error updating booking:", updateError);
             throw updateError;
           }
-          console.log(`Updated booking ${session.metadata.booking_id} status to confirmed and payment to paid`);
+          console.log(`Updated booking ${session.metadata.booking_id} status to confirmed and payment to paid with method ${session.payment_method_types?.[0] || 'card'}`);
           
           // Force a double-check update after a short delay to ensure changes are applied
           setTimeout(async () => {
