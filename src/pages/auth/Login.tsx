@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,15 +26,24 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const { signIn, isLoading } = useAuth();
+  const { signIn, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl') || '/';
   
   // Check if the URL has a type parameter (for direct link to host login)
   const params = new URLSearchParams(location.search);
   const initialAccountType = params.get('type') === 'host' ? 'host' : 'client';
   
   const [accountType, setAccountType] = React.useState<'client' | 'host'>(initialAccountType);
+
+  // If user is already logged in, redirect to return URL or dashboard
+  useEffect(() => {
+    if (user) {
+      navigate(returnUrl);
+    }
+  }, [user, navigate, returnUrl]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,7 +57,12 @@ const Login = () => {
     try {
       console.log(`Attempting to login as ${accountType}`, data.email);
       await signIn(data.email, data.password, accountType);
-      // Navigation is handled in the signIn function
+      
+      // Navigate to the return URL or dashboard after successful login
+      if (returnUrl) {
+        navigate(returnUrl);
+      }
+      // If no returnUrl, navigation is handled in the signIn function
     } catch (error: any) {
       toast.error(error.message || 'Erro ao fazer login');
       console.error('Login error:', error);
@@ -64,10 +78,15 @@ const Login = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Ou{' '}
-            <Link to="/auth/register" className="font-medium text-eventspace-500 hover:text-eventspace-400">
+            <Link to={`/auth/register${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} className="font-medium text-eventspace-500 hover:text-eventspace-400">
               crie uma nova conta
             </Link>
           </p>
+          {returnUrl && returnUrl !== '/' && (
+            <p className="mt-2 text-center text-sm text-blue-600">
+              Você será redirecionado para finalizar sua reserva após o login
+            </p>
+          )}
         </div>
         
         <Tabs 

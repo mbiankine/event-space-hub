@@ -15,12 +15,16 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Starting checkout process...");
+    
     // Parse request body
     const { space_id, price, days } = await req.json();
 
     if (!space_id || !price) {
       throw new Error("space_id and price are required");
     }
+    
+    console.log(`Checkout request: space_id=${space_id}, price=${price}, days=${days || 'not specified'}`);
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -38,20 +42,31 @@ serve(async (req) => {
     
     const user = userData.user;
     if (!user) throw new Error("User not authenticated");
+    
+    console.log(`Authenticated user: ${user.id} (${user.email})`);
+
+    // Get Stripe secret key from environment variables
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeSecretKey) {
+      throw new Error("STRIPE_SECRET_KEY is not configured");
+    }
 
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
 
     // Check if a Stripe customer record exists for this user
+    console.log(`Checking for existing Stripe customer with email: ${user.email}`);
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      console.log(`Found existing customer: ${customerId}`);
     } else {
       // Create a new customer
+      console.log(`Creating new Stripe customer for user: ${user.id}`);
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -59,19 +74,34 @@ serve(async (req) => {
         }
       });
       customerId = customer.id;
+      console.log(`Created new customer: ${customerId}`);
     }
 
     // Get space details
+    console.log(`Fetching space details for space_id: ${space_id}`);
     const { data: spaceData, error: spaceError } = await supabaseClient
       .from('spaces')
       .select('title, host_id')
       .eq('id', space_id)
       .single();
 
-    if (spaceError) throw spaceError;
-    if (!spaceData) throw new Error("Space not found");
+    if (spaceError) {
+      console.error(`Error fetching space details: ${spaceError.message}`);
+      throw spaceError;
+    }
+    if (!spaceData) {
+      console.error(`Space not found: ${space_id}`);
+      throw new Error("Space not found");
+    }
+    
+    console.log(`Space details: title=${spaceData.title}, host_id=${spaceData.host_id}`);
+
+    // Get origin URL for success/cancel redirects
+    const origin = req.headers.get("origin") || "http://localhost:3000";
+    console.log(`Using origin for redirects: ${origin}`);
 
     // Create a checkout session
+    console.log("Creating Stripe checkout session...");
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
@@ -89,8 +119,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/reservas/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/spaces/${space_id}`,
+      success_url: `${origin}/reservas/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/spaces/${space_id}`,
       metadata: {
         space_id,
         host_id: spaceData.host_id,
@@ -98,13 +128,19 @@ serve(async (req) => {
         days: days || 1
       }
     });
+    
+    console.log(`Checkout session created: ${session.id}`);
+    console.log(`Checkout URL: ${session.url}`);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: any) {
+    console.error("Error in create-checkout function:", error);
+    console.error("Error details:", error.message);
+    
+    return new Response(JSON.stringify({ error: error.message || "An unknown error occurred" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

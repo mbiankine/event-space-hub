@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
@@ -53,12 +53,42 @@ const SpaceDetail = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const location = useLocation();
+  const { user, profile, isLoading: isAuthLoading } = useAuth();
+  
+  // Check for return URL from login/register
+  useEffect(() => {
+    // Check if there's saved booking data in localStorage after login
+    const pendingBooking = localStorage.getItem('pendingBookingSpace');
+    if (pendingBooking && user) {
+      try {
+        const bookingData = JSON.parse(pendingBooking);
+        if (bookingData.spaceId === id) {
+          // Restore booking state
+          if (bookingData.date) setDate(new Date(bookingData.date));
+          if (bookingData.guests) setGuests(bookingData.guests);
+          if (bookingData.bookingType) setBookingType(bookingData.bookingType);
+          if (bookingData.selectedHours) setSelectedHours(bookingData.selectedHours);
+          if (bookingData.selectedDays) setSelectedDays(bookingData.selectedDays);
+          
+          // Open booking modal automatically
+          setTimeout(() => {
+            handleBookNow();
+          }, 500);
+        }
+        // Clear the pending booking data
+        localStorage.removeItem('pendingBookingSpace');
+      } catch (error) {
+        console.error("Error parsing saved booking data:", error);
+        localStorage.removeItem('pendingBookingSpace');
+      }
+    }
+  }, [id, user]);
   
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
-      name: "",
+      name: profile?.full_name || "",
       email: user?.email || "",
       phone: "",
       guests: 25,
@@ -70,6 +100,14 @@ const SpaceDetail = () => {
       bookingType: "hourly",
     },
   });
+  
+  // Update form fields when user profile loads
+  useEffect(() => {
+    if (user && profile) {
+      form.setValue('name', profile.full_name || '');
+      form.setValue('email', user.email || '');
+    }
+  }, [user, profile, form]);
   
   useEffect(() => {
     const fetchSpace = async () => {
@@ -155,47 +193,81 @@ const SpaceDetail = () => {
     );
   };
   
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     if (!user) {
       // If user is not logged in, show auth modal
       setIsAuthModalOpen(true);
-      return;
+      return { success: false };
     }
     
     // If user is logged in, proceed with booking
-    proceedWithBooking();
+    return proceedWithBooking();
   };
   
-  const proceedWithBooking = () => {
-    // Pre-fill form with current selections
-    form.setValue('date', date || new Date());
-    form.setValue('guests', guests);
-    form.setValue('hours', selectedHours);
-    form.setValue('days', selectedDays);
-    form.setValue('email', user?.email || '');
-    form.setValue('bookingType', bookingType);
+  const proceedWithBooking = async () => {
+    if (!user || !space) {
+      return { success: false };
+    }
     
-    // Open booking form
-    setIsAuthModalOpen(false);
-    setIsBookingModalOpen(true);
+    try {
+      // Pre-fill form with current selections and user data
+      form.setValue('date', date || new Date());
+      form.setValue('guests', guests);
+      form.setValue('hours', selectedHours);
+      form.setValue('days', selectedDays);
+      form.setValue('email', user.email || '');
+      form.setValue('name', profile?.full_name || '');
+      form.setValue('bookingType', bookingType);
+      
+      // Open booking form
+      setIsAuthModalOpen(false);
+      setIsBookingModalOpen(true);
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Error proceeding with booking:", error);
+      return { success: false };
+    }
   };
   
   const redirectToLogin = () => {
+    // Save current booking state to localStorage
+    localStorage.setItem('pendingBookingSpace', JSON.stringify({
+      spaceId: id,
+      date: date?.toISOString(),
+      guests,
+      bookingType,
+      selectedHours,
+      selectedDays
+    }));
+    
     // Close auth modal
     setIsAuthModalOpen(false);
-    // Redirect to login page
-    navigate("/auth/login");
+    
+    // Redirect to login page with return URL
+    navigate(`/auth/login?returnUrl=${encodeURIComponent(location.pathname)}`);
   };
   
   const redirectToRegister = () => {
+    // Save current booking state to localStorage
+    localStorage.setItem('pendingBookingSpace', JSON.stringify({
+      spaceId: id,
+      date: date?.toISOString(),
+      guests,
+      bookingType,
+      selectedHours,
+      selectedDays
+    }));
+    
     // Close auth modal
     setIsAuthModalOpen(false);
-    // Redirect to register page
-    navigate("/auth/register");
+    
+    // Redirect to register page with return URL
+    navigate(`/auth/register?returnUrl=${encodeURIComponent(location.pathname)}`);
   };
   
   const onSubmit = async (values: BookingFormValues) => {
-    if (!space || !user) return;
+    if (!space || !user) return { success: false };
     
     setIsSubmitting(true);
     try {
@@ -241,24 +313,22 @@ const SpaceDetail = () => {
       if (error) throw error;
       
       // Show success message
-      toast.success("Reserva realizada com sucesso!", {
-        description: "O anfitrião receberá sua solicitação e entrará em contato."
+      toast.success("Reserva criada com sucesso!", {
+        description: "Agora você será redirecionado para o pagamento."
       });
       
       // Close modal and reset form
       setIsBookingModalOpen(false);
       form.reset();
       
-      // Navigate to dashboard
-      setTimeout(() => {
-        navigate('/client/dashboard');
-      }, 2000);
+      return { success: true, bookingId: data[0].id };
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating booking:', error);
       toast.error("Erro ao fazer reserva", {
-        description: "Não foi possível processar sua reserva. Tente novamente."
+        description: error.message || "Não foi possível processar sua reserva. Tente novamente."
       });
+      return { success: false };
     } finally {
       setIsSubmitting(false);
     }

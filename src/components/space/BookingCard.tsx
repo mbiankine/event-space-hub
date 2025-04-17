@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, addHours, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, Clock, Users } from 'lucide-react';
@@ -12,8 +12,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useAuth } from '@/contexts/auth/AuthContext';
 
 interface BookingCardProps {
   space: any;
@@ -47,6 +48,8 @@ export function BookingCard({
   handleBookNow
 }: BookingCardProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isLoading: authLoading } = useAuth();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
@@ -96,22 +99,41 @@ export function BookingCard({
   };
 
   const handleProcessPayment = async () => {
+    // First check if user is logged in
+    if (!user) {
+      // Save current space in localStorage to return after login
+      localStorage.setItem('pendingBookingSpace', JSON.stringify({
+        spaceId: space.id,
+        date: date?.toISOString(),
+        guests,
+        bookingType,
+        selectedHours,
+        selectedDays
+      }));
+      
+      // Redirect to login page with return URL
+      navigate(`/auth/login?returnUrl=${encodeURIComponent(location.pathname)}`);
+      return;
+    }
+    
     try {
       setIsProcessingPayment(true);
       setPaymentError(null);
-      
-      // First call the booking function to create a booking record
-      handleBookNow();
+
+      // Create booking record first
+      const bookingResult = await handleBookNow();
+      if (!bookingResult?.success) {
+        throw new Error('Falha ao criar reserva');
+      }
       
       // Prepare data for Stripe checkout
       const paymentData = {
-        spaceId: space.id,
-        spaceTitle: space.title,
-        bookingType,
-        amount: totalPrice,
-        quantity: bookingType === 'hourly' ? selectedHours : selectedDays,
-        unit: bookingType === 'hourly' ? 'hora(s)' : 'dia(s)',
+        space_id: space.id,
+        price: totalPrice,
+        days: bookingType === 'daily' ? selectedDays : undefined
       };
+      
+      console.log('Sending checkout data:', paymentData);
       
       // Call the Supabase Edge Function to create a checkout session
       const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -120,21 +142,19 @@ export function BookingCard({
       
       if (error) {
         console.error('Error creating checkout session:', error);
-        setPaymentError('Erro ao processar o pagamento. Por favor, tente novamente.');
-        setIsErrorDialogOpen(true);
-        return;
+        throw new Error(error.message || 'Erro ao processar o pagamento');
       }
       
       // Redirect to Stripe Checkout
       if (data?.url) {
+        console.log('Redirecting to Stripe checkout:', data.url);
         window.location.href = data.url;
       } else {
-        setPaymentError('Não foi possível criar uma sessão de pagamento.');
-        setIsErrorDialogOpen(true);
+        throw new Error('Não foi possível criar uma sessão de pagamento');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment processing error:', error);
-      setPaymentError('Erro ao processar o pagamento. Por favor, tente novamente.');
+      setPaymentError(error.message || 'Erro ao processar o pagamento. Por favor, tente novamente.');
       setIsErrorDialogOpen(true);
     } finally {
       setIsProcessingPayment(false);
@@ -320,9 +340,9 @@ export function BookingCard({
           <Button 
             className="w-full" 
             onClick={handleProcessPayment}
-            disabled={isProcessingPayment || !date}
+            disabled={isProcessingPayment || !date || authLoading}
           >
-            {isProcessingPayment ? 'Processando...' : 'Reservar e Pagar'}
+            {isProcessingPayment ? 'Processando...' : (user ? 'Reservar e Pagar' : 'Continuar para login')}
           </Button>
         </CardFooter>
       </Card>

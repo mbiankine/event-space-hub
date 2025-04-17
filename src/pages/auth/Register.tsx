@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,15 +31,24 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
-  const { signUp, isLoading } = useAuth();
+  const { signUp, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl') || '/';
   
   // Check if the URL has a type parameter (for direct link to host registration)
   const params = new URLSearchParams(location.search);
   const initialAccountType = params.get('type') === 'host' ? 'host' : 'client';
   
   const [accountType, setAccountType] = React.useState<'client' | 'host'>(initialAccountType);
+
+  // If user is already logged in, redirect to return URL or dashboard
+  useEffect(() => {
+    if (user) {
+      navigate(returnUrl);
+    }
+  }, [user, navigate, returnUrl]);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -59,7 +68,8 @@ const Register = () => {
       if (result.success) {
         toast.success(`Conta de ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} criada com sucesso!`);
         toast.info('Por favor, faça login com suas credenciais.');
-        // Navigate is now handled in the signUp function in AuthContext
+        // Navigate to login with the return URL
+        navigate(`/auth/login${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
       } else if (result.error) {
         toast.error(result.error.message || 'Erro ao criar conta');
       }
@@ -78,10 +88,15 @@ const Register = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Ou{' '}
-            <Link to="/auth/login" className="font-medium text-eventspace-500 hover:text-eventspace-400">
+            <Link to={`/auth/login${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`} className="font-medium text-eventspace-500 hover:text-eventspace-400">
               entre com sua conta existente
             </Link>
           </p>
+          {returnUrl && returnUrl !== '/' && (
+            <p className="mt-2 text-center text-sm text-blue-600">
+              Após criar sua conta você poderá finalizar sua reserva
+            </p>
+          )}
         </div>
         
         <Tabs 
