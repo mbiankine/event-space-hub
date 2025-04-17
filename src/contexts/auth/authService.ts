@@ -42,6 +42,16 @@ export async function signUp(
   accountType: UserRole = 'client'
 ): Promise<{ success: boolean; error?: Error }> {
   try {
+    // First check if the user already exists but might be trying to create a new account type
+    const { data: existingUsers } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', email);
+    
+    if (existingUsers && existingUsers.length > 0) {
+      throw new Error('Este email já está cadastrado. Por favor faça login ou use outro email.');
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -64,6 +74,10 @@ export async function signUp(
         ]);
         
       if (roleError) throw roleError;
+      
+      // Sign out after registration to prevent automatic login
+      // This ensures a clean state for the next login
+      await supabase.auth.signOut();
     }
     
     return { success: true };

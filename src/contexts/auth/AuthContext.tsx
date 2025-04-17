@@ -23,13 +23,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log('Auth state changed', event, currentSession?.user?.id);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (event === 'SIGNED_IN' && currentSession?.user) {
           setTimeout(() => {
-            fetchUserProfile(currentSession.user.id).then(setProfile);
+            fetchUserProfile(currentSession.user.id).then(profile => {
+              console.log('Fetched profile', profile);
+              setProfile(profile);
+            });
             fetchUserRoles(currentSession.user.id).then(({ roles, primaryRole }) => {
+              console.log('Fetched roles', roles, primaryRole);
               setRoles(roles);
               setAccountType(primaryRole);
             });
@@ -44,12 +49,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Initial session check', currentSession?.user?.id);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        fetchUserProfile(currentSession.user.id).then(setProfile);
+        fetchUserProfile(currentSession.user.id).then(profile => {
+          console.log('Initial profile fetch', profile);
+          setProfile(profile);
+        });
         fetchUserRoles(currentSession.user.id).then(({ roles, primaryRole }) => {
+          console.log('Initial roles fetch', roles, primaryRole);
           setRoles(roles);
           setAccountType(primaryRole);
         });
@@ -95,9 +105,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!success) throw error;
       
       toast.success(`Conta criada com sucesso! Verifique seu email para confirmação.`);
+      return { success: true };
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
       console.error('Error signing up:', error);
+      return { success: false, error };
     } finally {
       setIsLoading(false);
     }

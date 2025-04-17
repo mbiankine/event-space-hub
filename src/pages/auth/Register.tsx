@@ -47,9 +47,15 @@ const Register = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      await signUp(data.email, data.password, data.fullName, accountType);
-      toast.success(`Conta de ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} criada com sucesso!`);
-      navigate('/auth/login');
+      const result = await signUp(data.email, data.password, data.fullName, accountType);
+      
+      if (result.success) {
+        toast.success(`Conta de ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} criada com sucesso!`);
+        toast.info('Por favor, faça login com suas credenciais.');
+        navigate('/auth/login');
+      } else if (result.error) {
+        toast.error(result.error.message || 'Erro ao criar conta');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
     }
