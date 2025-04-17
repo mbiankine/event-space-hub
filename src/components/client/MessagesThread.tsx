@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SendMessageForm } from './SendMessageForm';
 import { MessagesContainer } from '@/components/messages/MessagesContainer';
+import { Message } from '@/types/MessageTypes';
 
 interface MessagesThreadProps {
   contactId: string;
