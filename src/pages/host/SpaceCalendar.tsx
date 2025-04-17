@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/host/LoadingState';
 import { Calendar } from "@/components/ui/calendar";
@@ -102,22 +102,13 @@ const SpaceCalendar = () => {
     );
   };
 
-  // Custom day render function for the calendar
-  const renderDay = (day: Date, selected: Date[], dayProps: any) => {
-    const hasEvents = hasBookingsOnDate(day);
-    return (
-      <div 
-        {...dayProps}
-        className={`${dayProps.className} ${hasEvents ? 'relative' : ''}`}
-      >
-        {day.getDate()}
-        {hasEvents && (
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-            <div className="w-1 h-1 bg-primary rounded-full"></div>
-          </div>
-        )}
-      </div>
-    );
+  // Function to modify the day elements to show booking indicators
+  const modifyDay = (date: Date) => {
+    const hasEvents = hasBookingsOnDate(date);
+    if (hasEvents) {
+      return { className: 'relative booking-indicator' };
+    }
+    return {};
   };
 
   if (isLoading) {
@@ -159,9 +150,30 @@ const SpaceCalendar = () => {
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
-                  className="border rounded-md p-3"
-                  renderDay={renderDay}
+                  className="border rounded-md p-3 pointer-events-auto"
+                  modifiers={{
+                    booked: (date) => hasBookingsOnDate(date),
+                  }}
+                  modifiersStyles={{
+                    booked: {
+                      fontWeight: 'bold',
+                      textDecoration: 'underline',
+                    },
+                  }}
                 />
+                <style jsx>{`
+                  .booking-indicator::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 4px;
+                    height: 4px;
+                    border-radius: 50%;
+                    background-color: currentColor;
+                  }
+                `}</style>
               </CardContent>
             </Card>
           </div>

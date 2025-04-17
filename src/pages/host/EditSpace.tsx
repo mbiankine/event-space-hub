@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/AuthContext';
 import { SpaceForm } from '@/components/host/SpaceForm';
 import { SpaceFormValues } from '@/components/host/forms/types';
 import { toast } from 'sonner';
@@ -57,9 +57,10 @@ const EditSpace = () => {
     setIsSubmitting(true);
     try {
       // Handle image uploads if there are new images
+      let imagePaths: string[] = [];
+      
       if (values.images && values.images.length > 0 && values.images[0] instanceof File) {
         const imageFiles = values.images as File[];
-        const uploadedImagePaths = [];
         
         // Upload each new image
         for (const imageFile of imageFiles) {
@@ -70,15 +71,17 @@ const EditSpace = () => {
             .upload(filePath, imageFile);
             
           if (uploadError) throw uploadError;
-          uploadedImagePaths.push(filePath);
+          imagePaths.push(filePath);
         }
-        
-        // Replace images array with paths
-        values.images = uploadedImagePaths;
       } else {
         // Keep original images if no new ones
-        values.images = space.images;
+        imagePaths = space.images || [];
       }
+      
+      // Convert Date objects to ISO strings for database storage
+      const availabilityDates = values.availability.map(date => 
+        date instanceof Date ? date.toISOString().split('T')[0] : date
+      );
       
       // Update space data
       const { error } = await supabase
@@ -93,9 +96,9 @@ const EditSpace = () => {
           pricing_type: values.pricingType,
           location: values.location,
           amenities: values.amenities.concat(values.customAmenities || []),
-          availability: values.availability,
-          images: values.images,
-          updated_at: new Date()
+          availability: availabilityDates,
+          images: imagePaths,
+          updated_at: new Date().toISOString()
         })
         .eq('id', id);
         
