@@ -24,6 +24,7 @@ export type Database = {
           host_id: string
           id: string
           notes: string | null
+          payment_intent: string | null
           payment_status: string | null
           service_fee: number | null
           space_id: string
@@ -48,6 +49,7 @@ export type Database = {
           host_id: string
           id?: string
           notes?: string | null
+          payment_intent?: string | null
           payment_status?: string | null
           service_fee?: number | null
           space_id: string
@@ -72,6 +74,7 @@ export type Database = {
           host_id?: string
           id?: string
           notes?: string | null
+          payment_intent?: string | null
           payment_status?: string | null
           service_fee?: number | null
           space_id?: string

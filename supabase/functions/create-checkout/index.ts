@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -191,14 +190,14 @@ serve(async (req) => {
     console.log(`Checkout session created: ${session.id}`);
     console.log(`Checkout URL: ${session.url}`);
 
-    // If we have a booking_id, store the session ID in a more general way
+    // If we have a booking_id, store the session ID
     if (booking_id) {
       console.log(`Updating booking ${booking_id} with session ID ${session.id}`);
       
-      // Update the booking without relying on 'payment_intent' column
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
         .update({ 
+          payment_intent: session.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', booking_id);

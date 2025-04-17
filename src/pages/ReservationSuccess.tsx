@@ -5,7 +5,6 @@ import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Booking } from '@/types/BookingTypes';
 
 interface BookingDetails {
   id: string;
@@ -34,8 +33,9 @@ const ReservationSuccess = () => {
         
         const { data: pendingBookings, error: pendingError } = await supabase
           .from('bookings')
-          .select('id, status, space_title')
+          .select('id, status, space_title, payment_intent')
           .eq('payment_status', 'pending')
+          .is('payment_intent', null)
           .order('created_at', { ascending: false })
           .limit(1);
         
@@ -53,6 +53,7 @@ const ReservationSuccess = () => {
             .update({
               payment_status: 'paid',
               status: 'confirmed',
+              payment_intent: sessionId,
               updated_at: new Date().toISOString()
             })
             .eq('id', booking.id);
