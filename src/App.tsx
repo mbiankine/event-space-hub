@@ -17,6 +17,7 @@ import Index from '@/pages/Index';
 import SpaceDetail from '@/pages/SpaceDetail';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
+import ReservationSuccess from '@/pages/ReservationSuccess';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { StorageInit } from '@/components/storage/StorageInit';
 import { AuthProvider } from '@/contexts/auth/AuthContext';
@@ -35,6 +36,9 @@ function App() {
             {/* Auth routes */}
             <Route path="/auth/login" element={<Login />} />
             <Route path="/auth/register" element={<Register />} />
+            
+            {/* Reservation success route */}
+            <Route path="/reservas/sucesso" element={<ReservationSuccess />} />
             
             {/* Protected client routes */}
             <Route 
