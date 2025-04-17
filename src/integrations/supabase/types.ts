@@ -130,10 +130,12 @@ export type Database = {
           created_at: string | null
           description: string
           host_id: string
+          hourly_price: number | null
           id: string
           images: string[] | null
           location: Json
-          price: number
+          price: number | null
+          pricing_type: string
           space_type: string
           title: string
           updated_at: string | null
@@ -145,10 +147,12 @@ export type Database = {
           created_at?: string | null
           description: string
           host_id: string
+          hourly_price?: number | null
           id?: string
           images?: string[] | null
           location: Json
-          price: number
+          price?: number | null
+          pricing_type?: string
           space_type: string
           title: string
           updated_at?: string | null
@@ -160,10 +164,12 @@ export type Database = {
           created_at?: string | null
           description?: string
           host_id?: string
+          hourly_price?: number | null
           id?: string
           images?: string[] | null
           location?: Json
-          price?: number
+          price?: number | null
+          pricing_type?: string
           space_type?: string
           title?: string
           updated_at?: string | null

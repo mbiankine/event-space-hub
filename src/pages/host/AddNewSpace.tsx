@@ -41,7 +41,7 @@ const AddNewSpace = () => {
         ...(values.customAmenities || [])
       ];
 
-      // Make sure default price is set for pricing type
+      // Fazer ajustes nos valores de acordo com o tipo de preço
       let price = null;
       let hourlyPrice = null;
       
