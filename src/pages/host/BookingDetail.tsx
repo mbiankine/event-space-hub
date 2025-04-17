@@ -48,7 +48,7 @@ const BookingDetail = () => {
         const completeBookingData = {
           ...bookingData,
           payment_method: bookingData.payment_method || 'card'
-        };
+        } as Booking;
 
         setBooking(completeBookingData);
 

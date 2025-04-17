@@ -47,13 +47,13 @@ export const useClientBookings = (user: User | null) => {
         if (currentError) throw currentError;
         
         // Format current bookings
-        const formattedCurrentBookings = currentBookingsData.map((booking) => ({
+        const formattedCurrentBookings = currentBookingsData.map((booking: any) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
           images: booking.spaces?.images || [],
           location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
-          payment_method: booking.payment_method || 'card' // Handle case when payment_method is undefined
+          payment_method: booking.payment_method || 'card' // Provide default when missing
         }));
         
         // Get past bookings
@@ -75,13 +75,13 @@ export const useClientBookings = (user: User | null) => {
         if (pastError) throw pastError;
         
         // Format past bookings
-        const pastBookingsFormatted = pastBookingsData.map((booking) => ({
+        const pastBookingsFormatted = pastBookingsData.map((booking: any) => ({
           ...booking,
           space_title: booking.spaces?.title || booking.space_title,
           images: booking.spaces?.images || [],
           location: booking.spaces?.location || 'Localização não disponível',
           host_id: booking.spaces?.host_id || booking.host_id,
-          payment_method: booking.payment_method || 'card' // Handle case when payment_method is undefined
+          payment_method: booking.payment_method || 'card' // Provide default when missing
         }));
         
         if (isMounted) {
