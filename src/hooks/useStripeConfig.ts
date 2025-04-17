@@ -21,7 +21,15 @@ export function useStripeConfig() {
       if (error) throw error;
       
       if (data?.url) {
-        window.location.href = data.url;
+        // Show a toast notification before redirecting
+        toast.info('Redirecionando para o checkout...');
+        
+        // Small timeout to allow toast to show before redirecting
+        setTimeout(() => {
+          window.location.href = data.url;
+        }, 1000);
+        
+        return true;
       } else {
         throw new Error('Não foi possível iniciar o checkout');
       }
@@ -35,8 +43,6 @@ export function useStripeConfig() {
     } finally {
       setIsLoading(false);
     }
-    
-    return true;
   }
 
   return { 

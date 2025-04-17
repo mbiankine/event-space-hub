@@ -10,7 +10,7 @@ import * as z from "zod";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { LoadingState } from "@/components/host/LoadingState";
-import { useAuth } from "@/contexts/auth/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 
@@ -183,6 +183,16 @@ const SpaceDetail = () => {
   const handleBookNow = async (): Promise<{ success: boolean }> => {
     if (!user) {
       setIsAuthModalOpen(true);
+      
+      localStorage.setItem('pendingBookingSpace', JSON.stringify({
+        spaceId: id,
+        date: date?.toISOString(),
+        guests,
+        bookingType,
+        selectedHours,
+        selectedDays
+      }));
+      
       return { success: false };
     }
     

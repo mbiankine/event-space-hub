@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { useAuth } from '@/contexts/auth/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useStripeConfig } from '@/hooks/useStripeConfig';
 
 interface BookingCardProps {
@@ -55,6 +55,7 @@ export function BookingCard({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
   const [isStripeConfigMissing, setIsStripeConfigMissing] = useState(false);
+  const { startStripeCheckout } = useStripeConfig();
   
   // Calculate total price based on pricing type and booking type
   const calculatePrice = () => {
@@ -100,24 +101,14 @@ export function BookingCard({
     setSelectedDays(newValue);
   };
 
-  const handleProcessPayment = async () => {
-    // First check if user is logged in
+  const handleReserveClick = async () => {
+    // If user is not logged in, initiate the booking process that will lead to auth dialog
     if (!user) {
-      // Save current space in localStorage to return after login
-      localStorage.setItem('pendingBookingSpace', JSON.stringify({
-        spaceId: space.id,
-        date: date?.toISOString(),
-        guests,
-        bookingType,
-        selectedHours,
-        selectedDays
-      }));
-      
-      // Redirect to login page with return URL
-      navigate(`/auth/login?returnUrl=${encodeURIComponent(location.pathname)}`);
+      handleBookNow();
       return;
     }
-    
+
+    // If user is logged in, proceed directly with booking
     try {
       setIsProcessingPayment(true);
       setPaymentError(null);
@@ -128,50 +119,10 @@ export function BookingCard({
         throw new Error('Falha ao criar reserva');
       }
       
-      // Prepare data for Stripe checkout
-      const paymentData = {
-        space_id: space.id,
-        price: totalPrice,
-        days: bookingType === 'daily' ? selectedDays : undefined
-      };
-      
-      console.log('Sending checkout data:', paymentData);
-      
-      // Call the Supabase Edge Function to create a checkout session
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: paymentData
-      });
-      
-      if (error) {
-        console.error('Error creating checkout session:', error);
-        throw new Error(error.message || 'Erro ao processar o pagamento');
-      }
-      
-      // Check if there's an error message in the response
-      if (data?.error) {
-        console.error('Error from create-checkout function:', data.error);
-        
-        // Check if the error is related to missing Stripe configuration
-        if (data.error.includes('STRIPE_SECRET_KEY is not configured')) {
-          setIsStripeConfigMissing(true);
-          throw new Error('Configuração do Stripe não foi encontrada. Por favor, contate o administrador.');
-        } else {
-          throw new Error(data.error);
-        }
-      }
-      
-      // Redirect to Stripe Checkout
-      if (data?.url) {
-        console.log('Redirecting to Stripe checkout:', data.url);
-        window.location.href = data.url;
-      } else {
-        throw new Error('Não foi possível criar uma sessão de pagamento');
-      }
     } catch (error: any) {
-      console.error('Payment processing error:', error);
-      setPaymentError(error.message || 'Erro ao processar o pagamento. Por favor, tente novamente.');
+      console.error('Booking error:', error);
+      setPaymentError(error.message || 'Erro ao processar a reserva. Por favor, tente novamente.');
       setIsErrorDialogOpen(true);
-    } finally {
       setIsProcessingPayment(false);
     }
   };
@@ -354,10 +305,10 @@ export function BookingCard({
         <CardFooter>
           <Button 
             className="w-full" 
-            onClick={handleProcessPayment}
+            onClick={handleReserveClick}
             disabled={isProcessingPayment || !date || authLoading}
           >
-            {isProcessingPayment ? 'Processando...' : (user ? 'Reservar e Pagar' : 'Continuar para login')}
+            {isProcessingPayment ? 'Processando...' : 'Reservar'}
           </Button>
         </CardFooter>
       </Card>
