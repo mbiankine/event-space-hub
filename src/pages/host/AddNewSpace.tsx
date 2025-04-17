@@ -85,7 +85,12 @@ const AddNewSpace = () => {
       
       // Upload images if there are any
       if (values.images?.length > 0) {
-        const uploadPromises = values.images.map(async (file: File, index: number) => {
+        const uploadPromises = values.images.map(async (file: File | string, index: number) => {
+          // Skip if it's already a string (already uploaded)
+          if (typeof file === 'string') {
+            return file;
+          }
+
           const fileExt = file.name.split('.').pop();
           const fileName = `${insertedSpaceData.id}/${index}-${Date.now()}.${fileExt}`;
           

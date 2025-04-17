@@ -15,6 +15,7 @@ import { AmenitiesSection } from './forms/AmenitiesSection';
 import { AvailabilitySection } from './forms/AvailabilitySection';
 import { ImageUploadSection } from './forms/ImageUploadSection';
 import { SpaceFormValues } from './forms/types';
+import { AlertCircle } from 'lucide-react';
 
 // Schema for space validation
 const spaceFormSchema = z.object({
@@ -56,9 +57,13 @@ const spaceFormSchema = z.object({
       description: z.string().optional()
     })
   ).optional(),
-  availability: z.array(z.date()),
+  availability: z.array(z.date()).min(1, {
+    message: "Selecione pelo menos uma data disponível",
+  }),
   // Update the type of images to accept either an array of Files or an array of strings
-  images: z.array(z.any()).optional(),
+  images: z.array(z.any()).min(1, {
+    message: "Adicione pelo menos uma imagem",
+  }),
 });
 
 interface SpaceFormProps {
@@ -94,7 +99,22 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
       availability: [],
       images: [],
     },
+    mode: "onChange", // Importante: validar em tempo real
   });
+
+  // Estado para controlar se todos os campos obrigatórios estão preenchidos
+  const [isValid, setIsValid] = useState(false);
+
+  // Acompanhar as mudanças nos valores e erros do formulário
+  useEffect(() => {
+    // Verificar se o formulário é válido
+    const validateForm = async () => {
+      const result = await form.trigger();
+      setIsValid(result);
+    };
+    
+    validateForm();
+  }, [form.watch(), form]);
 
   // Update the function to explicitly handle the mixed array type
   const handleImageUpload = (images: File[]) => {
@@ -106,6 +126,9 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     
     // Set the new array with both string URLs and File objects
     form.setValue("images", [...stringImages, ...images]);
+    
+    // Trigger validation after setting images
+    form.trigger("images");
   };
 
   const handleSubmit = async (values: SpaceFormValues) => {
@@ -117,9 +140,23 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     }
   };
 
+  // Obter a contagem de erros
+  const errorCount = Object.keys(form.formState.errors).length;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-foreground">
+        {/* Mensagem de erro quando há campos inválidos */}
+        {errorCount > 0 && (
+          <div className="bg-destructive/10 p-3 rounded-md flex items-start gap-2 text-destructive">
+            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Verifique os campos obrigatórios</p>
+              <p className="text-sm">Há {errorCount} {errorCount === 1 ? 'campo que precisa' : 'campos que precisam'} ser preenchido{errorCount === 1 ? '' : 's'} corretamente.</p>
+            </div>
+          </div>
+        )}
+        
         {/* Basic Information */}
         <BasicInfoSection control={form.control} />
         
@@ -143,7 +180,7 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
 
         <Button 
           type="submit" 
-          disabled={isSubmitting} 
+          disabled={isSubmitting || !isValid} 
           className="w-full"
         >
           {isSubmitting ? "Salvando..." : "Publicar Espaço"}

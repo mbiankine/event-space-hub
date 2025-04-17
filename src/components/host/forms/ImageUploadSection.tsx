@@ -3,13 +3,15 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { FormSection } from './FormSection';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface ImageUploadSectionProps {
   onChange: (images: File[]) => void;
   initialImages?: Array<string | File>;
+  error?: boolean;
 }
 
-export function ImageUploadSection({ onChange, initialImages = [] }: ImageUploadSectionProps) {
+export function ImageUploadSection({ onChange, initialImages = [], error = false }: ImageUploadSectionProps) {
   const [uploadedImages, setUploadedImages] = useState<Array<string | File>>(initialImages || []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +78,10 @@ export function ImageUploadSection({ onChange, initialImages = [] }: ImageUpload
 
   return (
     <FormSection title="Imagens">
-      <div className="border-2 border-dashed rounded-md p-6 text-center">
+      <div className={cn(
+        "border-2 border-dashed rounded-md p-6 text-center",
+        error && uploadedImages.length === 0 ? "border-destructive bg-destructive/5" : ""
+      )}>
         <input
           id="file-upload"
           name="file-upload"
@@ -88,13 +93,21 @@ export function ImageUploadSection({ onChange, initialImages = [] }: ImageUpload
         />
         <label 
           htmlFor="file-upload" 
-          className="cursor-pointer inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          className={cn(
+            "cursor-pointer inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white",
+            error && uploadedImages.length === 0 ? "bg-destructive hover:bg-destructive/90" : "bg-blue-600 hover:bg-blue-700"
+          )}
         >
           Carregar Imagens
         </label>
         <p className="text-xs text-muted-foreground mt-2">
           PNG, JPG, WEBP até 10MB
         </p>
+        {error && uploadedImages.length === 0 && (
+          <p className="text-xs text-destructive mt-2">
+            Adicione pelo menos uma imagem
+          </p>
+        )}
       </div>
 
       {uploadedImages.length > 0 && (

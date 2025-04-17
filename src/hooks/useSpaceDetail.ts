@@ -16,7 +16,6 @@ export const useSpaceDetail = (id: string | undefined) => {
       
       setIsLoading(true);
       try {
-        // Remove 'custom_amenities' from the select statement as it doesn't exist as a column
         const { data, error } = await supabase
           .from('spaces')
           .select('*')
