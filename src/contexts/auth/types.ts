@@ -9,6 +9,7 @@ export interface UserProfile {
   avatar_url: string | null;
   full_name: string | null;
   bio: string | null;
+  phone: string | null; // Added phone property
 }
 
 export interface AuthContextType {
