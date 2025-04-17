@@ -1,11 +1,12 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PaymentDetailsProps {
   booking: {
+    id: string;
     space_price: number | null;
     additional_services_price: number | null;
     service_fee: number | null;
@@ -17,6 +18,55 @@ interface PaymentDetailsProps {
 }
 
 const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
+  const [updatedBooking, setUpdatedBooking] = useState(booking);
+
+  useEffect(() => {
+    // Set up real-time subscription for booking updates
+    const channel = supabase
+      .channel('booking-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bookings',
+        filter: `id=eq.${booking.id}`
+      }, (payload) => {
+        console.log('Booking updated:', payload);
+        setUpdatedBooking({
+          ...updatedBooking,
+          payment_status: payload.new.payment_status,
+          status: payload.new.status,
+          payment_method: payload.new.payment_method
+        });
+      })
+      .subscribe();
+
+    // Set up polling every minute
+    const pollInterval = setInterval(async () => {
+      console.log('Polling booking status...');
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', booking.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        console.log('Polling update:', data);
+        setUpdatedBooking({
+          ...updatedBooking,
+          payment_status: data.payment_status,
+          status: data.status,
+          payment_method: data.payment_method
+        });
+      }
+    }, 60000); // 1 minute interval
+
+    // Cleanup subscriptions and intervals
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
+  }, [booking.id]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -75,40 +125,40 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
         <h3 className="font-medium">Detalhes do Pagamento</h3>
         <div className="flex justify-between">
           <span>Valor do espaço</span>
-          <span>{booking.space_price ? formatCurrency(booking.space_price) : '-'}</span>
+          <span>{updatedBooking.space_price ? formatCurrency(updatedBooking.space_price) : '-'}</span>
         </div>
-        {booking.additional_services_price > 0 && (
+        {updatedBooking.additional_services_price > 0 && (
           <div className="flex justify-between">
             <span>Serviços adicionais</span>
-            <span>{formatCurrency(booking.additional_services_price)}</span>
+            <span>{formatCurrency(updatedBooking.additional_services_price)}</span>
           </div>
         )}
-        {booking.service_fee > 0 && (
+        {updatedBooking.service_fee > 0 && (
           <div className="flex justify-between">
             <span>Taxa de serviço</span>
-            <span>{formatCurrency(booking.service_fee)}</span>
+            <span>{formatCurrency(updatedBooking.service_fee)}</span>
           </div>
         )}
         <div className="flex justify-between">
           <span>Forma de pagamento</span>
-          <span>{getPaymentMethodText(booking.payment_method)}</span>
+          <span>{getPaymentMethodText(updatedBooking.payment_method)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span>Status do Pagamento</span>
           <span className="inline-flex items-center">
-            {getPaymentStatusBadge(booking.payment_status)}
+            {getPaymentStatusBadge(updatedBooking.payment_status)}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <span>Status da Reserva</span>
           <span className="inline-flex items-center">
-            {getBookingStatusBadge(booking.status)}
+            {getBookingStatusBadge(updatedBooking.status)}
           </span>
         </div>
         <Separator />
         <div className="flex justify-between font-medium">
           <span>Total</span>
-          <span>{booking.total_price ? formatCurrency(booking.total_price) : '-'}</span>
+          <span>{updatedBooking.total_price ? formatCurrency(updatedBooking.total_price) : '-'}</span>
         </div>
       </div>
     </CardContent>
