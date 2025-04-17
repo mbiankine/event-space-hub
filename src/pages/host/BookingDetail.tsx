@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Header } from "@/components/Header";
@@ -7,6 +8,8 @@ import { Footer } from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Booking } from "@/types/BookingTypes";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import BookingDetailHeader from "@/components/host/booking/BookingDetailHeader";
 import BookingDetailActions from "@/components/host/booking/BookingDetailActions";
 import BookingDetailContent from "@/components/host/booking/BookingDetailContent";
@@ -39,12 +42,14 @@ const BookingDetail = () => {
           return;
         }
 
-        const tempBooking: any = {
+        // Create a properly typed booking object with optional payment_method
+        const tempBooking: Booking = {
           ...bookingData,
+          // Add payment_method if needed - it's optional in the Booking type
           payment_method: bookingData.payment_method || 'card'
         };
 
-        setBooking(tempBooking as Booking);
+        setBooking(tempBooking);
 
         if (bookingData.space_id) {
           const { data: spaceData, error: spaceError } = await supabase
@@ -123,12 +128,14 @@ const BookingDetail = () => {
         <Header />
         <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8 flex items-center justify-center">
           <Card className="w-full max-w-md p-6">
-            <p className="text-center text-muted-foreground">Reserva não encontrada ou você não tem permissão para visualizá-la.</p>
-            <div className="mt-4 flex justify-center">
-              <Button asChild>
-                <Link to="/host/bookings">Voltar para reservas</Link>
-              </Button>
-            </div>
+            <CardContent>
+              <p className="text-center text-muted-foreground">Reserva não encontrada ou você não tem permissão para visualizá-la.</p>
+              <div className="mt-4 flex justify-center">
+                <Button asChild>
+                  <Link to="/host/bookings">Voltar para reservas</Link>
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         </main>
         <Footer />
