@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { useStripeConfig } from '@/hooks/useStripeConfig';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -10,12 +10,59 @@ import BookingLayout from '@/components/client/booking/BookingLayout';
 import BookingContent from '@/components/client/booking/BookingContent';
 import BookingNotFound from '@/components/client/booking/BookingNotFound';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const BookingDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { startStripeCheckout, isLoading: isPaymentLoading } = useStripeConfig();
-  const { booking, isLoading, error, isRefreshing, handleRefresh } = useBookingDetails(id, user);
+  
+  // Process potential Stripe checkout session ID
+  useEffect(() => {
+    const processCheckoutSession = async () => {
+      if (!id || !id.startsWith('cs_')) return;
+      
+      try {
+        // If this is a Stripe checkout session ID, try to find the associated booking
+        console.log('Received Stripe checkout session ID, looking for associated booking');
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('payment_intent', id)
+          .maybeSingle();
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (data?.id) {
+          // Redirect to the actual booking page using the booking ID
+          navigate(`/client/bookings/${data.id}`, { replace: true });
+          toast.success('Pagamento processado com sucesso!');
+          return;
+        }
+        
+        // If no booking was found, show a message and redirect to dashboard
+        toast.error('Não foi possível encontrar a reserva associada a este pagamento');
+        setTimeout(() => navigate('/client/dashboard', { replace: true }), 2000);
+      } catch (error) {
+        console.error('Error processing checkout session:', error);
+        toast.error('Erro ao processar informações de pagamento');
+        setTimeout(() => navigate('/client/dashboard', { replace: true }), 2000);
+      }
+    };
+    
+    processCheckoutSession();
+  }, [id, navigate]);
+
+  // Regular booking ID handling
+  const { booking, isLoading, error, isRefreshing, handleRefresh } = useBookingDetails(
+    // Only use ID for hook if it's a valid UUID
+    id && !id.startsWith('cs_') ? id : undefined, 
+    user
+  );
   
   const handlePayment = async () => {
     if (!booking) return;
@@ -32,7 +79,8 @@ const BookingDetails = () => {
     }
   };
   
-  if (isLoading) {
+  // Show loading for both regular loading and Stripe checkout session processing
+  if (isLoading || (id && id.startsWith('cs_'))) {
     return (
       <BookingLayout>
         <LoadingState 
