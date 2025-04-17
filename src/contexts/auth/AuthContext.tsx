@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { AuthContextType, UserProfile, UserRole } from './types';
-import { fetchUserProfile, fetchUserRoles } from './authHooks';
+import { fetchUserProfile } from './authHooks';
 import * as authService from './authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,11 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.log('Fetched profile', profile);
               setProfile(profile);
             });
-            fetchUserRoles(currentSession.user.id).then(({ roles, primaryRole }) => {
-              console.log('Fetched roles', roles, primaryRole);
-              setRoles(roles);
-              setAccountType(primaryRole);
-            });
+            
+            // Get role from user metadata instead of roles table
+            const userRole = currentSession.user.user_metadata.account_type as UserRole;
+            console.log('User role from metadata:', userRole);
+            if (userRole) {
+              setRoles([userRole]);
+              setAccountType(userRole);
+            }
           }, 0);
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out, clearing data");
@@ -61,11 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Initial profile fetch', profile);
           setProfile(profile);
         });
-        fetchUserRoles(currentSession.user.id).then(({ roles, primaryRole }) => {
-          console.log('Initial roles fetch', roles, primaryRole);
-          setRoles(roles);
-          setAccountType(primaryRole);
-        });
+        
+        // Get role from user metadata
+        const userRole = currentSession.user.user_metadata.account_type as UserRole;
+        console.log('User role from metadata:', userRole);
+        if (userRole) {
+          setRoles([userRole]);
+          setAccountType(userRole);
+        }
       }
       setIsLoading(false);
     });
@@ -83,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!success) throw error;
       
+      // We now get the account type from the user metadata, but still set it here for immediate use
       setAccountType(accountType);
       console.log(`Sign in successful, redirecting to ${accountType} dashboard`);
       
@@ -105,11 +112,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       console.log(`Attempting to sign up as ${accountType}`);
-      const { success, error } = await authService.signUp(email, password, fullName, accountType);
+      const { success, error, userId } = await authService.signUp(email, password, fullName, accountType);
       
       if (!success) throw error;
       
-      toast.success(`Conta criada com sucesso! Verifique seu email para confirmação.`);
+      toast.success(`Conta criada com sucesso! Agora você pode fazer login.`);
+      navigate('/auth/login'); // Redirect to login page after successful signup
       return { success: true };
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');

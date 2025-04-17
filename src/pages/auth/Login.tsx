@@ -48,7 +48,7 @@ const Login = () => {
     try {
       console.log(`Attempting to login as ${accountType}`, data.email);
       await signIn(data.email, data.password, accountType);
-      // Navigation is handled inside signIn function
+      // Navigation is handled in the signIn function
     } catch (error: any) {
       toast.error(error.message || 'Erro ao fazer login');
       console.error('Login error:', error);

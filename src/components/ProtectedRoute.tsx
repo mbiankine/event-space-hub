@@ -17,6 +17,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
   }
 
   if (!user) {
+    // Store the path the user was trying to access so we can redirect after login
     return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
   }
 
@@ -30,8 +31,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) 
     // Verificar o papel do usuário normalmente
     if (!roles.includes(requiredRole)) {
       // Redirecionar com base no tipo de conta principal
-      const dashboardPath = `/${accountType}/dashboard`;
-      return <Navigate to={dashboardPath} replace />;
+      if (accountType) {
+        const dashboardPath = `/${accountType}/dashboard`;
+        return <Navigate to={dashboardPath} replace />;
+      }
+      // If no account type is found, redirect to home
+      return <Navigate to="/" replace />;
     }
   }
 

@@ -59,7 +59,7 @@ const Register = () => {
       if (result.success) {
         toast.success(`Conta de ${accountType === 'client' ? 'Cliente' : 'Anfitrião'} criada com sucesso!`);
         toast.info('Por favor, faça login com suas credenciais.');
-        navigate('/auth/login');
+        // Navigate is now handled in the signUp function in AuthContext
       } else if (result.error) {
         toast.error(result.error.message || 'Erro ao criar conta');
       }
