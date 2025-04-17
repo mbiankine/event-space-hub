@@ -22,20 +22,50 @@ const AddNewSpace = () => {
     setIsSubmitting(true);
     
     try {
+      // Prepare location data with the new fields
+      const locationData = {
+        street: values.location.street,
+        number: values.location.number || '',
+        complement: values.location.complement || '',
+        neighborhood: values.location.neighborhood || '',
+        city: values.location.city,
+        state: values.location.state,
+        zipCode: values.location.zipCode,
+        country: values.location.country,
+      };
+      
+      // Combine standard and custom amenities
+      const allAmenities = [
+        ...(values.amenities || []),
+        ...(values.customAmenities || [])
+      ];
+
+      // Prepare space data with pricing options
+      const spaceData: any = {
+        title: values.title,
+        description: values.description,
+        location: locationData,
+        capacity: values.capacity,
+        space_type: values.spaceType,
+        amenities: allAmenities,
+        host_id: user.id,
+        availability: values.availability.map((date: Date) => date.toISOString().split('T')[0]),
+        pricing_type: values.pricingType
+      };
+
+      // Handle different pricing types
+      if (values.pricingType === 'daily' || values.pricingType === 'both') {
+        spaceData.price = values.price;
+      }
+      
+      if (values.pricingType === 'hourly' || values.pricingType === 'both') {
+        spaceData.hourly_price = values.hourlyPrice;
+      }
+
       // 1. First upload the space data
       const { data: spaceData, error: spaceError } = await supabase
         .from('spaces')
-        .insert({
-          title: values.title,
-          description: values.description,
-          location: values.location,
-          price: values.price,
-          capacity: values.capacity,
-          space_type: values.spaceType,
-          amenities: values.amenities,
-          host_id: user.id,
-          availability: values.availability.map((date: Date) => date.toISOString().split('T')[0]),
-        } as any)
+        .insert(spaceData)
         .select()
         .single();
 
@@ -64,7 +94,7 @@ const AddNewSpace = () => {
           .from('spaces')
           .update({
             images: uploadedPaths
-          } as any)
+          })
           .eq('id', spaceData.id);
           
         if (updateError) throw updateError;
