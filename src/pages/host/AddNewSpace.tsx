@@ -20,6 +20,7 @@ const AddNewSpace = () => {
     }
 
     setIsSubmitting(true);
+    console.log("Form values being submitted:", values);
     
     try {
       // Prepare location data with the new fields
@@ -40,27 +41,34 @@ const AddNewSpace = () => {
         ...(values.customAmenities || [])
       ];
 
-      // Prepare space data with pricing options
-      const spaceToInsert: any = {
-        title: values.title,
-        description: values.description,
-        location: locationData,
-        capacity: values.capacity,
-        space_type: values.spaceType,
-        amenities: allAmenities,
-        host_id: user.id,
-        availability: values.availability.map((date: Date) => date.toISOString().split('T')[0]),
-        pricing_type: values.pricingType
-      };
-
-      // Handle different pricing types
+      // Make sure default price is set for pricing type
+      let price = null;
+      let hourlyPrice = null;
+      
       if (values.pricingType === 'daily' || values.pricingType === 'both') {
-        spaceToInsert.price = values.price;
+        price = parseFloat(values.price) || 0;
       }
       
       if (values.pricingType === 'hourly' || values.pricingType === 'both') {
-        spaceToInsert.hourly_price = values.hourlyPrice;
+        hourlyPrice = parseFloat(values.hourlyPrice) || 0;
       }
+
+      // Prepare space data with pricing options
+      const spaceToInsert = {
+        title: values.title,
+        description: values.description,
+        location: locationData,
+        capacity: parseInt(values.capacity) || 0,
+        space_type: values.spaceType,
+        amenities: allAmenities,
+        host_id: user.id,
+        availability: (values.availability || []).map((date: Date) => date.toISOString().split('T')[0]),
+        pricing_type: values.pricingType,
+        price: price,
+        hourly_price: hourlyPrice
+      };
+      
+      console.log("Sending to Supabase:", spaceToInsert);
 
       // 1. First upload the space data
       const { data: insertedSpaceData, error: spaceError } = await supabase
@@ -69,7 +77,12 @@ const AddNewSpace = () => {
         .select()
         .single();
 
-      if (spaceError) throw spaceError;
+      if (spaceError) {
+        console.error("Supabase insert error:", spaceError);
+        throw spaceError;
+      }
+      
+      console.log("Space created successfully:", insertedSpaceData);
       
       // 2. Upload images if there are any
       if (values.images && values.images.length > 0) {
@@ -78,16 +91,22 @@ const AddNewSpace = () => {
           const fileName = `${insertedSpaceData.id}/${index}-${Date.now()}.${fileExt}`;
           const filePath = `spaces/${fileName}`;
           
+          console.log(`Uploading image ${index} to ${filePath}`);
+          
           const { error: uploadError } = await supabase.storage
             .from('spaces')
             .upload(filePath, file);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error(`Error uploading image ${index}:`, uploadError);
+            throw uploadError;
+          }
           
           return filePath;
         });
         
         const uploadedPaths = await Promise.all(uploadPromises);
+        console.log("Uploaded image paths:", uploadedPaths);
         
         // 3. Update the space with image paths
         const { error: updateError } = await supabase
@@ -97,7 +116,10 @@ const AddNewSpace = () => {
           })
           .eq('id', insertedSpaceData.id);
           
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error("Error updating space with images:", updateError);
+          throw updateError;
+        }
       }
       
       toast.success("Seu espaço foi publicado com sucesso!");
