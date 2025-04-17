@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AnalyticsContent } from "./AnalyticsContent";
 import { BookingsList } from "./BookingsList";
@@ -9,9 +9,19 @@ import { SpacesList } from "./SpacesList";
 
 interface DashboardTabsProps {
   spaces: any[];
+  bookings: any[];
+  isLoading: boolean;
 }
 
-export const DashboardTabs = ({ spaces }: DashboardTabsProps) => {
+export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProps) => {
+  if (isLoading) {
+    return (
+      <div className="col-span-1 lg:col-span-3 flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="col-span-1 lg:col-span-3">
       <Tabs defaultValue="spaces" className="h-full flex flex-col">
@@ -41,7 +51,7 @@ export const DashboardTabs = ({ spaces }: DashboardTabsProps) => {
               </Link>
             </Button>
           </div>
-          <BookingsList />
+          <BookingsList bookings={bookings} />
         </TabsContent>
 
         <TabsContent value="analytics" className="flex-1 space-y-6 mt-4">

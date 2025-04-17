@@ -18,6 +18,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 // Host routes
 import AddNewSpace from "./pages/host/AddNewSpace";
 import ManageSpaces from "./pages/host/ManageSpaces";
+import HostBookings from "./pages/host/Bookings";
+import BookingDetail from "./pages/host/BookingDetail";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +47,8 @@ const App = () => (
               <Route path="/host/dashboard" element={<HostDashboard />} />
               <Route path="/host/spaces" element={<ManageSpaces />} />
               <Route path="/host/spaces/new" element={<AddNewSpace />} />
-              {/* Add more host routes as needed */}
+              <Route path="/host/bookings" element={<HostBookings />} />
+              <Route path="/host/bookings/:id" element={<BookingDetail />} />
             </Route>
             
             {/* Protected routes for admins */}
