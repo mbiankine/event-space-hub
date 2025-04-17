@@ -1,12 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, StoreIcon, CheckCircle2, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, StoreIcon, CheckCircle2, AlertCircle, ExternalLink, Loader2, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 const StripeConfig = () => {
   const navigate = useNavigate();
-  const { hasRole, user } = useAuth();
+  const { hasRole, user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isProduction, setIsProduction] = useState(false);
   const [testApiKey, setTestApiKey] = useState("");
@@ -23,6 +23,27 @@ const StripeConfig = () => {
   const [webhookSecret, setWebhookSecret] = useState("");
   const [stripeConnected, setStripeConnected] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [errorDetails, setErrorDetails] = useState("");
+
+  useEffect(() => {
+    // Reset error when changing API keys
+    if (testApiKey || prodApiKey) {
+      setErrorMessage("");
+      setErrorDetails("");
+    }
+  }, [testApiKey, prodApiKey]);
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!hasRole('admin')) {
     navigate('/');
@@ -33,6 +54,7 @@ const StripeConfig = () => {
     try {
       setIsLoading(true);
       setErrorMessage("");
+      setErrorDetails("");
       
       // Validate input
       if (!testApiKey || testApiKey.trim() === "") {
@@ -64,11 +86,15 @@ const StripeConfig = () => {
       
       if (error) {
         console.error("Function error:", error);
+        setErrorMessage(`Erro na função: ${error.message}`);
+        setErrorDetails(JSON.stringify(error, null, 2));
         throw new Error(`Erro na função: ${error.message}`);
       }
       
-      if (data.error) {
+      if (data?.error) {
         console.error("API error:", data.error, data.details);
+        setErrorMessage(`Erro: ${data.error}`);
+        setErrorDetails(data.details || "Sem detalhes adicionais");
         throw new Error(`Erro: ${data.error}`);
       }
       
@@ -76,9 +102,13 @@ const StripeConfig = () => {
       toast.success("Configurações do Stripe salvas com sucesso!");
     } catch (error) {
       console.error("Error saving Stripe keys:", error);
-      setErrorMessage(error.message || "Erro ao salvar configurações do Stripe");
-      toast.error(error.message || "Erro ao salvar configurações do Stripe");
       setStripeConnected(false);
+      
+      if (!errorMessage) {
+        setErrorMessage(error.message || "Erro ao salvar configurações do Stripe");
+      }
+      
+      toast.error(error.message || "Erro ao salvar configurações do Stripe");
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +144,17 @@ const StripeConfig = () => {
               <h3 className="font-semibold text-red-600 dark:text-red-400">Erro ao salvar configurações</h3>
             </div>
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
+            
+            {errorDetails && (
+              <div className="mt-2">
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-red-500 font-medium">Ver detalhes técnicos</summary>
+                  <pre className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded overflow-auto max-h-60">
+                    {errorDetails}
+                  </pre>
+                </details>
+              </div>
+            )}
           </div>
         )}
 
@@ -140,7 +181,7 @@ const StripeConfig = () => {
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
                     <span className="font-medium">Não configurado</span>
                   </>
                 )}
@@ -247,12 +288,16 @@ const StripeConfig = () => {
               </div>
 
               {errorMessage && (
-                <div className="mt-4">
-                  <Textarea 
-                    readOnly
-                    value={errorMessage}
-                    className="h-24 text-red-600 bg-red-50 dark:bg-red-900/10 border-red-200"
-                  />
+                <div className="mt-4 p-2 border border-red-200 bg-red-50 dark:bg-red-900/10 rounded">
+                  <div className="flex gap-2 items-start mb-2">
+                    <AlertCircle className="h-4 w-4 text-red-500 mt-0.5" />
+                    <p className="text-sm text-red-600">Erro ao validar as chaves do Stripe. Verifique se:</p>
+                  </div>
+                  <ul className="text-xs text-red-600 ml-6 list-disc space-y-1">
+                    <li>A chave de teste começa com <code>sk_test_</code> e é válida</li>
+                    <li>Você está logado como administrador</li>
+                    <li>A sessão de autenticação está válida (tente fazer login novamente)</li>
+                  </ul>
                 </div>
               )}
             </CardContent>
