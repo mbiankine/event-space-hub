@@ -191,22 +191,21 @@ serve(async (req) => {
     console.log(`Checkout session created: ${session.id}`);
     console.log(`Checkout URL: ${session.url}`);
 
-    // Se temos um booking_id, atualizamos o registro com o session_id
+    // If we have a booking_id, store the session ID in a more general way
     if (booking_id) {
-      console.log(`Updating booking ${booking_id} with session_id ${session.id}`);
+      console.log(`Updating booking ${booking_id} with session ID ${session.id}`);
       
-      // Modify this part - don't try to update a non-existent column
+      // Update the booking without relying on 'payment_intent' column
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
         .update({ 
-          payment_intent: session.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', booking_id);
       
       if (updateError) {
-        console.error(`Error updating booking with session_id: ${updateError.message}`);
-        // Continuamos mesmo se houver erro, já que o checkout ainda pode funcionar
+        console.error(`Error updating booking: ${updateError.message}`);
+        // Continue even if there's an error, since checkout can still work
       }
     }
 
