@@ -30,6 +30,7 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Pago</Badge>;
       case 'failed':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Falhou</Badge>;
+      case 'pending':
       default:
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
     }
@@ -41,6 +42,7 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Confirmado</Badge>;
       case 'cancelled':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Cancelado</Badge>;
+      case 'pending':
       default:
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Pendente</Badge>;
     }
@@ -88,13 +90,13 @@ const PaymentDetails = ({ booking }: PaymentDetailsProps) => {
         <div className="flex items-center justify-between">
           <span>Status do Pagamento</span>
           <span className="inline-flex items-center">
-            {getPaymentStatusBadge(booking.payment_status)}
+            {getPaymentStatusBadge(booking.payment_status || 'pending')}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <span>Status da Reserva</span>
           <span className="inline-flex items-center">
-            {getBookingStatusBadge(booking.status)}
+            {getBookingStatusBadge(booking.status || 'pending')}
           </span>
         </div>
         <Separator />

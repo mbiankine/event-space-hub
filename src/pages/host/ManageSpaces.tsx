@@ -42,6 +42,10 @@ const ManageSpaces = () => {
     fetchSpaces();
   }, [user]);
 
+  const handleAddNewSpace = () => {
+    navigate('/host/spaces/new');
+  };
+
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -64,12 +68,12 @@ const ManageSpaces = () => {
       title="Meus Espaços"
       description="Gerencie os espaços que você disponibiliza"
     >
-      <PageHeader onAddClick={() => navigate('/host/spaces/new')} />
+      <PageHeader onAddClick={handleAddNewSpace} />
 
       {isLoading ? (
         <LoadingState />
       ) : spaces.length === 0 ? (
-        <EmptyStateCard onAddClick={() => navigate('/host/spaces/new')} />
+        <EmptyStateCard onAddClick={handleAddNewSpace} />
       ) : (
         <SpacesGrid 
           spaces={spaces} 
