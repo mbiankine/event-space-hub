@@ -2,9 +2,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/integrations/supabase/client';
+import { Space } from '@/types/SpaceTypes';
 
 export const useSpaceDetail = (id: string | undefined) => {
-  const [space, setSpace] = useState<any>(null);
+  const [space, setSpace] = useState<Space | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
@@ -22,21 +23,30 @@ export const useSpaceDetail = (id: string | undefined) => {
           .eq('id', id)
           .single();
           
-        if (error) throw error;
-        setSpace(data);
+        if (error) {
+          console.error('Error fetching space:', error);
+          throw error;
+        }
         
-        // Only process availability if data exists and has availability property
-        if (data && data.availability && data.availability.length > 0) {
+        if (!data) {
+          console.error('No space data found');
+          throw new Error('Space not found');
+        }
+        
+        setSpace(data as Space);
+        
+        // Processar disponibilidade apenas se existir e tiver comprimento > 0
+        if (data.availability && Array.isArray(data.availability) && data.availability.length > 0) {
           const availableDatesArray = data.availability.map((dateStr: string) => new Date(dateStr));
           setAvailableDates(availableDatesArray);
+        } else {
+          setAvailableDates([]);
         }
         
-        // Only load bookings if we successfully got the space data
-        if (data && data.id) {
-          await loadBookings(data.id);
-        }
+        // Carregar reservas apenas se tivermos dados do espaço
+        await loadBookings(data.id);
       } catch (error) {
-        console.error('Error fetching space:', error);
+        console.error('Error in fetchSpace:', error);
         navigate('/');
       } finally {
         setIsLoading(false);
@@ -48,23 +58,32 @@ export const useSpaceDetail = (id: string | undefined) => {
 
   const loadBookings = async (spaceId: string) => {
     try {
+      console.log('Loading bookings for space ID:', spaceId);
+      
       const { data, error } = await supabase
         .from('bookings')
         .select('booking_date, payment_status, status')
         .eq('space_id', spaceId)
         .or('status.eq.confirmed,payment_status.eq.paid');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching bookings:', error);
+        throw error;
+      }
       
       if (data && data.length > 0) {
+        console.log('Bookings found:', data.length);
         const dates = data
           .filter(booking => booking.payment_status === 'paid' || booking.status === 'confirmed')
           .map(booking => new Date(booking.booking_date));
         
         setUnavailableDates(dates);
+      } else {
+        console.log('No bookings found');
+        setUnavailableDates([]);
       }
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.error('Error in loadBookings:', error);
     }
   };
 

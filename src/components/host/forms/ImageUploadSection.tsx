@@ -20,9 +20,8 @@ export function ImageUploadSection({ onChange, initialImages = [], error = false
       const updatedImages = [...uploadedImages, ...newFiles];
       setUploadedImages(updatedImages);
       
-      // Only pass File objects to onChange
-      const fileObjects = newFiles as File[];
-      onChange(fileObjects);
+      // Apenas passar objetos File para onChange
+      onChange(newFiles);
     }
   };
 
@@ -30,8 +29,8 @@ export function ImageUploadSection({ onChange, initialImages = [], error = false
     const updatedImages = uploadedImages.filter((_, i) => i !== index);
     setUploadedImages(updatedImages);
     
-    // Only pass File objects to onChange - this means if user removes an image,
-    // we need to extract all remaining File objects and pass them
+    // Extrair apenas os objetos File e passar para onChange
+    // Isso garante que o tratamento de remoção só afete o que é necessário
     const fileObjects = updatedImages.filter(img => img instanceof File) as File[];
     onChange(fileObjects);
   };
@@ -42,19 +41,16 @@ export function ImageUploadSection({ onChange, initialImages = [], error = false
     if (image instanceof File) {
       imageUrl = URL.createObjectURL(image);
     } else if (typeof image === 'string') {
-      // For strings, assume they are either URLs or Supabase storage paths
+      // Para strings, assumir que são URLs ou caminhos de armazenamento do Supabase
       if (image.startsWith('http')) {
         imageUrl = image;
       } else {
-        // If it's a storage path, construct the URL using Supabase
-        // Fix: correctly access the publicUrl from the returned object
-        const { data } = supabase.storage
-          .from('spaces')
-          .getPublicUrl(image);
+        // Se for um caminho de armazenamento, construa o URL usando Supabase
+        const { data } = supabase.storage.from('spaces').getPublicUrl(image);
         imageUrl = data.publicUrl;
       }
     } else {
-      // Fallback for any other cases
+      // Fallback para quaisquer outros casos
       imageUrl = '/placeholder.svg';
     }
     

@@ -47,7 +47,7 @@ const AddNewSpace = () => {
       let hourlyPrice = null;
       
       if (values.pricingType === 'daily' || values.pricingType === 'both') {
-        price = parseFloat(values.price.toString()) || 0;
+        price = parseFloat(values.price?.toString() || '0') || 0;
       }
       
       if (values.pricingType === 'hourly' || values.pricingType === 'both') {
@@ -72,6 +72,8 @@ const AddNewSpace = () => {
         created_at: new Date().toISOString()
       };
 
+      console.log("Space data to insert:", spaceToInsert);
+
       // First upload the space data
       const { data: insertedSpaceData, error: spaceError } = await supabase
         .from('spaces')
@@ -79,7 +81,10 @@ const AddNewSpace = () => {
         .select()
         .single();
 
-      if (spaceError) throw spaceError;
+      if (spaceError) {
+        console.error("Error inserting space:", spaceError);
+        throw new Error(`Erro ao criar espaço: ${spaceError.message}`);
+      }
       
       console.log("Space created successfully:", insertedSpaceData);
       
@@ -91,27 +96,44 @@ const AddNewSpace = () => {
             return file;
           }
 
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${insertedSpaceData.id}/${index}-${Date.now()}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('spaces')
-            .upload(fileName, file);
+          try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${insertedSpaceData.id}/${index}-${Date.now()}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('spaces')
+              .upload(fileName, file);
 
-          if (uploadError) throw uploadError;
-          
-          return fileName;
+            if (uploadError) {
+              console.error("Error uploading image:", uploadError);
+              throw uploadError;
+            }
+            
+            return fileName;
+          } catch (error) {
+            console.error(`Error uploading image at index ${index}:`, error);
+            return null;
+          }
         });
         
-        const uploadedPaths = await Promise.all(uploadPromises);
-        
-        // Update space with image paths
-        const { error: updateError } = await supabase
-          .from('spaces')
-          .update({ images: uploadedPaths })
-          .eq('id', insertedSpaceData.id);
+        try {
+          const uploadedPaths = await Promise.all(uploadPromises);
+          const validPaths = uploadedPaths.filter(Boolean);
           
-        if (updateError) throw updateError;
+          // Update space with image paths
+          const { error: updateError } = await supabase
+            .from('spaces')
+            .update({ images: validPaths })
+            .eq('id', insertedSpaceData.id);
+            
+          if (updateError) {
+            console.error("Error updating space with images:", updateError);
+            throw updateError;
+          }
+        } catch (error) {
+          console.error("Error in image upload process:", error);
+          // Continue with success even if some images failed
+        }
       }
       
       toast.success("Seu espaço foi publicado com sucesso!");

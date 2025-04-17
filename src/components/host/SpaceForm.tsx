@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,10 +37,10 @@ const spaceFormSchema = z.object({
   pricingType: z.enum(['daily', 'hourly', 'both']),
   price: z.coerce.number().positive({
     message: "O preço deve ser um valor positivo",
-  }),
+  }).optional().nullable(),
   hourlyPrice: z.coerce.number().positive({
     message: "O preço por hora deve ser um valor positivo",
-  }).optional(),
+  }).optional().nullable(),
   capacity: z.coerce.number().positive({
     message: "A capacidade deve ser um número positivo",
   }),
@@ -60,10 +59,25 @@ const spaceFormSchema = z.object({
   availability: z.array(z.date()).min(1, {
     message: "Selecione pelo menos uma data disponível",
   }),
-  // Update the type of images to accept either an array of Files or an array of strings
   images: z.array(z.any()).min(1, {
     message: "Adicione pelo menos uma imagem",
   }),
+}).refine((data) => {
+  if (data.pricingType === 'daily' || data.pricingType === 'both') {
+    return !!data.price && data.price > 0;
+  }
+  return true;
+}, {
+  message: "Preço por diária é obrigatório",
+  path: ["price"]
+}).refine((data) => {
+  if (data.pricingType === 'hourly' || data.pricingType === 'both') {
+    return !!data.hourlyPrice && data.hourlyPrice > 0;
+  }
+  return true;
+}, {
+  message: "Preço por hora é obrigatório",
+  path: ["hourlyPrice"]
 });
 
 interface SpaceFormProps {
@@ -99,39 +113,36 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
       availability: [],
       images: [],
     },
-    mode: "onChange", // Importante: validar em tempo real
+    mode: "onChange",
   });
 
-  // Estado para controlar se todos os campos obrigatórios estão preenchidos
   const [isValid, setIsValid] = useState(false);
 
-  // Acompanhar as mudanças nos valores e erros do formulário
   useEffect(() => {
-    // Verificar se o formulário é válido
-    const validateForm = async () => {
-      const result = await form.trigger();
-      setIsValid(result);
-    };
+    const subscription = form.watch(() => {
+      form.trigger().then(result => {
+        setIsValid(result);
+      });
+    });
     
-    validateForm();
-  }, [form.watch(), form]);
+    return () => subscription.unsubscribe();
+  }, [form]);
 
-  // Update the function to explicitly handle the mixed array type
-  const handleImageUpload = (images: File[]) => {
-    // Create a properly typed array
-    const currentImages = form.getValues("images") || [];
+  const handleImageUpload = (newImages: File[]) => {
+    if (!newImages || newImages.length === 0) return;
     
-    // Remove any previous File objects if we're adding new ones
-    const stringImages = currentImages.filter(img => typeof img === 'string') as string[];
-    
-    // Set the new array with both string URLs and File objects
-    form.setValue("images", [...stringImages, ...images]);
-    
-    // Trigger validation after setting images
-    form.trigger("images");
+    try {
+      const currentImages = form.getValues("images") || [];
+      const stringImages = currentImages.filter(img => typeof img === 'string');
+      form.setValue("images", [...stringImages, ...newImages]);
+      form.trigger("images");
+    } catch (error) {
+      console.error("Error handling image upload:", error);
+    }
   };
 
   const handleSubmit = async (values: SpaceFormValues) => {
+    console.log("Form submission values:", values);
     try {
       await onSubmit(values);
     } catch (error) {
@@ -140,13 +151,17 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     }
   };
 
-  // Obter a contagem de erros
   const errorCount = Object.keys(form.formState.errors).length;
+  
+  useEffect(() => {
+    if (errorCount > 0) {
+      console.log("Form errors:", form.formState.errors);
+    }
+  }, [form.formState.errors, errorCount]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-foreground">
-        {/* Mensagem de erro quando há campos inválidos */}
         {errorCount > 0 && (
           <div className="bg-destructive/10 p-3 rounded-md flex items-start gap-2 text-destructive">
             <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
@@ -157,25 +172,20 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
           </div>
         )}
         
-        {/* Basic Information */}
         <BasicInfoSection control={form.control} />
         
-        {/* Pricing */}
         <PricingSection control={form.control} watch={form.watch} />
         
-        {/* Location */}
         <LocationSection control={form.control} form={form} />
         
-        {/* Amenities */}
         <AmenitiesSection control={form.control} form={form} />
         
-        {/* Availability */}
         <AvailabilitySection control={form.control} />
         
-        {/* Images */}
         <ImageUploadSection 
           onChange={handleImageUpload} 
           initialImages={form.getValues("images")}
+          error={!!form.formState.errors.images}
         />
 
         <Button 
