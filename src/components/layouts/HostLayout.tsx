@@ -15,7 +15,7 @@ export const HostLayout = ({ children, title, description }: HostLayoutProps) =>
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 container mx-auto px-4 md:px-6 py-8">
-        <div className="mb-6 text-left">
+        <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h1>
           {description && <p className="text-muted-foreground mt-1">{description}</p>}
         </div>
