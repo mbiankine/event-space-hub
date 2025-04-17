@@ -18,6 +18,15 @@ export function BookingConfirmationView({
   isProcessingPayment,
   onProceedToPayment
 }: BookingConfirmationViewProps) {
+  // Calculate correct total price based on booking type
+  const getTotalPrice = () => {
+    if (watch.bookingType === 'hourly') {
+      return (space.hourly_price || 0) * watch.hours;
+    } else {
+      return space.price * (watch.days || 1);
+    }
+  };
+  
   return (
     <div className="space-y-4">
       <div className="rounded-lg bg-green-50 dark:bg-green-950/30 p-4 border border-green-200 dark:border-green-900">
@@ -92,9 +101,7 @@ export function BookingConfirmationView({
       <div className="flex justify-between font-semibold">
         <span>Total</span>
         <span>
-          R$ {watch.bookingType === 'hourly' 
-            ? (space.hourly_price * watch.hours).toFixed(2) 
-            : (space.price * watch.days).toFixed(2)}
+          R$ {getTotalPrice().toFixed(2)}
         </span>
       </div>
 

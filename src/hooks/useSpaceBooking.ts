@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,32 +31,64 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
   const { user, profile } = useAuth();
   const { startStripeCheckout } = useStripeConfig();
   
+  const [bookingValues, setBookingValues] = useState({
+    date: new Date(),
+    guests: 25,
+    hours: 4,
+    days: 1,
+    bookingType: "hourly" as "hourly" | "daily"
+  });
+  
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
       name: profile?.full_name || "",
       email: user?.email || "",
       phone: "",
-      guests: 25,
-      date: new Date(),
-      hours: 4,
-      days: 1,
+      guests: bookingValues.guests,
+      date: bookingValues.date,
+      hours: bookingValues.hours,
+      days: bookingValues.days,
       eventType: "",
       notes: "",
-      bookingType: "hourly",
+      bookingType: bookingValues.bookingType,
     },
   });
 
-  const handleBookNow = async () => {
+  const handleBookNow = async (bookingDetails?: {
+    date?: Date,
+    guests?: number,
+    selectedHours?: number,
+    selectedDays?: number,
+    bookingType?: "hourly" | "daily"
+  }) => {
+    if (bookingDetails) {
+      const newValues = {
+        date: bookingDetails.date || bookingValues.date,
+        guests: bookingDetails.guests || bookingValues.guests,
+        hours: bookingDetails.selectedHours || bookingValues.hours,
+        days: bookingDetails.selectedDays || bookingValues.days,
+        bookingType: bookingDetails.bookingType || bookingValues.bookingType
+      };
+      
+      setBookingValues(newValues);
+      
+      form.setValue("guests", newValues.guests);
+      form.setValue("date", newValues.date);
+      form.setValue("hours", newValues.hours);
+      if (newValues.days) form.setValue("days", newValues.days);
+      form.setValue("bookingType", newValues.bookingType);
+    }
+    
     if (!user) {
       setIsAuthModalOpen(true);
       localStorage.setItem('pendingBookingSpace', JSON.stringify({
         spaceId: space.id,
-        date: form.getValues('date')?.toISOString(),
-        guests: form.getValues('guests'),
-        bookingType: form.getValues('bookingType'),
-        selectedHours: form.getValues('hours'),
-        selectedDays: form.getValues('days')
+        date: bookingValues.date?.toISOString(),
+        guests: bookingValues.guests,
+        bookingType: bookingValues.bookingType,
+        selectedHours: bookingValues.hours,
+        selectedDays: bookingValues.days
       }));
       return { success: false };
     }
@@ -76,7 +107,6 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
     return { success: true };
   };
 
-  // Calculate the proper price based on the booking type and duration
   const calculateTotalPrice = (values: BookingFormValues) => {
     if (values.bookingType === 'hourly') {
       return (space.hourly_price || 0) * values.hours;
@@ -145,7 +175,6 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
   const handleProceedToPayment = async () => {
     if (!confirmedBookingId || !space) return;
     
-    // Calculate the price based on current form values, not saved ones
     const formValues = form.getValues();
     let price = 0;
     let days;
@@ -172,6 +201,7 @@ export const useSpaceBooking = (space: any, navigate: (path: string) => void) =>
     bookingConfirmed,
     handleBookNow,
     onSubmit,
-    handleProceedToPayment
+    handleProceedToPayment,
+    bookingValues
   };
 };

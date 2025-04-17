@@ -62,10 +62,21 @@ const SpaceDetail = () => {
 
   const imageUrls = getImageUrls(space);
   
+  const handleBookingClick = () => {
+    // Capture current booking state values when booking button is clicked
+    handleBookNow({
+      date: bookingState.date,
+      guests: bookingState.guests,
+      selectedHours: bookingState.selectedHours,
+      selectedDays: bookingState.selectedDays,
+      bookingType: bookingState.bookingType
+    });
+  };
+  
   const bookingProps = {
     ...bookingState,
     isDateAvailable: (date: Date) => !unavailableDates.some(d => d.getTime() === date.getTime()),
-    handleBookNow,
+    handleBookNow: handleBookingClick,
     unavailableDates
   };
 
