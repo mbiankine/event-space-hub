@@ -38,6 +38,14 @@ const Login = () => {
   const initialAccountType = params.get('type') === 'host' ? 'host' : 'client';
   
   const [accountType, setAccountType] = React.useState<'client' | 'host'>(initialAccountType);
+  
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   // If user is already logged in, redirect to return URL or dashboard
   useEffect(() => {
@@ -105,55 +113,47 @@ const Login = () => {
             </TabsContent>
           </Tabs>
           
-          <Form {...useForm<LoginFormValues>({
-            resolver: zodResolver(loginSchema),
-            defaultValues: {
-              email: '',
-              password: '',
-            },
-          })}>
-            {(form) => (
-              <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-6">
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="seu@email.com" type="email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Senha</FormLabel>
-                        <FormControl>
-                          <Input placeholder="******" type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-4 space-y-6">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="seu@email.com" type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input placeholder="******" type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                <div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Entrando...' : `Entrar como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'}`}
-                  </Button>
-                </div>
-              </form>
-            )}
+              <div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Entrando...' : `Entrar como ${accountType === 'client' ? 'Cliente' : 'Anfitrião'}`}
+                </Button>
+              </div>
+            </form>
           </Form>
         </CardContent>
       </Card>
