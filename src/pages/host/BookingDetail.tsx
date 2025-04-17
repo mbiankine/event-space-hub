@@ -1,21 +1,15 @@
-
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ChevronLeft, MessageSquare } from "lucide-react";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { Booking } from "@/types/BookingTypes";
-import BookingMainInfo from "@/components/host/booking/BookingMainInfo";
-import BookingStatusActions from "@/components/host/booking/BookingStatusActions";
-import BookingClientInfo from "@/components/host/booking/BookingClientInfo";
-import BookingSpaceInfo from "@/components/host/booking/BookingSpaceInfo";
+import BookingDetailHeader from "@/components/host/booking/BookingDetailHeader";
+import BookingDetailActions from "@/components/host/booking/BookingDetailActions";
+import BookingDetailContent from "@/components/host/booking/BookingDetailContent";
 
 const BookingDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,13 +39,11 @@ const BookingDetail = () => {
           return;
         }
 
-        // First create a temporary object with the optional property
         const tempBooking: any = {
           ...bookingData,
           payment_method: bookingData.payment_method || 'card'
         };
 
-        // Then set it to state with the proper type assertion
         setBooking(tempBooking as Booking);
 
         if (bookingData.space_id) {
@@ -148,70 +140,22 @@ const BookingDetail = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <Button variant="outline" size="sm" className="mb-4" asChild>
-              <Link to="/host/bookings">
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Voltar para reservas
-              </Link>
-            </Button>
-            <h1 className="text-3xl font-bold mb-2">Detalhes da Reserva</h1>
-            <p className="text-muted-foreground">{booking?.space_title || "Espaço reservado"}</p>
-          </div>
-          <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Mensagens
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Conversa com {booking?.client_name || "Cliente"}</SheetTitle>
-                  <SheetDescription>Envie mensagens sobre esta reserva</SheetDescription>
-                </SheetHeader>
-                <div className="h-full flex flex-col justify-center items-center">
-                  <p className="text-muted-foreground">Sistema de mensagens em desenvolvimento.</p>
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            {booking && user && (
-              <BookingStatusActions 
-                booking={booking} 
-                user={user} 
-                onStatusUpdate={(newStatus) => setBooking(booking ? { ...booking, status: newStatus } : null)}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <BookingDetailHeader booking={booking} />
           {booking && (
-            <BookingMainInfo 
-              booking={booking} 
-              formatDate={(date: string) => {
-                if (!date) return "Não definido";
-                
-                const options: Intl.DateTimeFormatOptions = { 
-                  day: 'numeric', 
-                  month: 'long', 
-                  year: 'numeric' 
-                };
-                
-                const dateObj = new Date(date);
-                return dateObj.toLocaleDateString('pt-BR', options);
-              }} 
+            <BookingDetailActions
+              booking={booking}
+              user={user}
+              onStatusUpdate={(newStatus) => setBooking(booking ? { ...booking, status: newStatus } : null)}
             />
           )}
-
-          <Card className="md:col-span-2">
-            <BookingClientInfo client={client} booking={booking as any} />
-            <BookingSpaceInfo space={space} />
-          </Card>
         </div>
+        <BookingDetailContent 
+          booking={booking} 
+          client={client} 
+          space={space} 
+          formatDate={formatDate}
+        />
       </main>
       <Footer />
     </div>
