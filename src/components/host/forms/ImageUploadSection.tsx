@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { FormSection } from './FormSection';
@@ -44,10 +45,11 @@ export function ImageUploadSection({ onChange, initialImages = [] }: ImageUpload
         imageUrl = image;
       } else {
         // If it's a storage path, construct the URL using Supabase
-        const { publicUrl } = supabase.storage
+        // Fix: correctly access the publicUrl from the returned object
+        const { data } = supabase.storage
           .from('spaces')
           .getPublicUrl(image);
-        imageUrl = publicUrl;
+        imageUrl = data.publicUrl;
       }
     } else {
       // Fallback for any other cases
