@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface BookingDateSelectorProps {
   date: Date | undefined;
@@ -12,6 +13,7 @@ interface BookingDateSelectorProps {
   isDateAvailable: (date: Date) => boolean;
   selectedDateRange: Date[];
   selectedDays: number;
+  setSelectedDays: (days: number) => void;
   bookingType: "hourly" | "daily";
 }
 
@@ -21,6 +23,7 @@ export const BookingDateSelector = ({
   isDateAvailable,
   selectedDateRange,
   selectedDays,
+  setSelectedDays,
   bookingType
 }: BookingDateSelectorProps) => {
   const getDateRangeText = () => {
@@ -38,6 +41,68 @@ export const BookingDateSelector = ({
     return format(date, "dd 'de' MMMM, yyyy", { locale: ptBR });
   };
 
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (!newDate) {
+      setDate(undefined);
+      return;
+    }
+
+    // If hourly booking, just set the date
+    if (bookingType === 'hourly') {
+      setDate(newDate);
+      setSelectedDays(1);
+      return;
+    }
+
+    // For daily bookings
+    if (!date) {
+      setDate(newDate);
+      return;
+    }
+
+    // Check if dates are sequential
+    const daysDiff = Math.abs(differenceInDays(newDate, date));
+    
+    if (daysDiff >= selectedDays) {
+      // If the new date is after the current date, adjust the range
+      if (isAfter(newDate, date)) {
+        // Check if all dates in between are available
+        let allDatesAvailable = true;
+        const tempDate = new Date(date);
+        for (let i = 1; i < selectedDays; i++) {
+          tempDate.setDate(tempDate.getDate() + 1);
+          if (!isDateAvailable(tempDate)) {
+            allDatesAvailable = false;
+            break;
+          }
+        }
+
+        if (!allDatesAvailable) {
+          toast.error("Existem datas indisponíveis no período selecionado");
+          return;
+        }
+      } else {
+        // If selecting a date before the current end date
+        let allDatesAvailable = true;
+        const tempDate = new Date(newDate);
+        for (let i = 1; i < selectedDays; i++) {
+          tempDate.setDate(tempDate.getDate() + 1);
+          if (!isDateAvailable(tempDate)) {
+            allDatesAvailable = false;
+            break;
+          }
+        }
+
+        if (!allDatesAvailable) {
+          toast.error("Existem datas indisponíveis no período selecionado");
+          return;
+        }
+      }
+    }
+
+    setDate(newDate);
+  };
+
   const isInSelectedRange = (day: Date) => {
     return selectedDateRange.some(selectedDate => 
       selectedDate.getDate() === day.getDate() &&
@@ -53,20 +118,20 @@ export const BookingDateSelector = ({
         <Popover>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
+              variant={"outline"}
               className="w-full justify-start text-left font-normal"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {getDateRangeText()}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
               selected={date}
-              onSelect={setDate}
+              onSelect={handleDateSelect}
               className="p-3 pointer-events-auto"
-              fromDate={new Date()}
+              fromDate={addDays(new Date(), 2)} // Minimum 2 days from today
               disabled={(date) => !isDateAvailable(date)}
               modifiers={{
                 selected: isInSelectedRange
@@ -74,20 +139,48 @@ export const BookingDateSelector = ({
               modifiersStyles={{
                 selected: { backgroundColor: '#0284c7', color: 'white' }
               }}
+              locale={ptBR}
             />
           </PopoverContent>
         </Popover>
       </div>
       
-      {bookingType === 'daily' && selectedDays > 1 && (
-        <div className="mt-2 text-sm text-muted-foreground">
-          {selectedDateRange.length > 0 ? (
-            <span>
-              Reservando {selectedDateRange.length} dia(s) consecutivo(s)
+      {bookingType === 'daily' && (
+        <div className="mt-4">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setSelectedDays(Math.max(1, selectedDays - 1))}
+              disabled={selectedDays <= 1}
+            >
+              -
+            </Button>
+            <span className="min-w-[40px] text-center">{selectedDays}</span>
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => {
+                if (date) {
+                  // Check if next day is available
+                  const nextDate = addDays(date, selectedDays);
+                  if (isDateAvailable(nextDate)) {
+                    setSelectedDays(selectedDays + 1);
+                  } else {
+                    toast.error("Próximo dia não está disponível");
+                  }
+                } else {
+                  setSelectedDays(selectedDays + 1);
+                }
+              }}
+              disabled={selectedDays >= 30}
+            >
+              +
+            </Button>
+            <span className="text-sm text-muted-foreground ml-2">
+              {selectedDays > 1 ? 'dias consecutivos' : 'dia'}
             </span>
-          ) : (
-            <span>Selecione uma data inicial</span>
-          )}
+          </div>
         </div>
       )}
     </div>

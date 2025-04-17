@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { format, addDays } from "date-fns";
+import { format, addDays, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
@@ -177,8 +177,18 @@ const SpaceDetail = () => {
   const isDateAvailable = (date: Date) => {
     if (!date) return false;
     
+    // Check if date is at least 2 days in the future from the space creation
+    if (space && space.created_at) {
+      const spaceCreationDate = new Date(space.created_at);
+      const minBookingDate = addDays(spaceCreationDate, 2);
+      if (isBefore(date, minBookingDate)) {
+        return false;
+      }
+    }
+    
     const dateStr = format(date, 'yyyy-MM-dd');
     
+    // Check if date is unavailable due to existing bookings
     const isUnavailable = unavailableDates.some(unavailableDate => 
       format(unavailableDate, 'yyyy-MM-dd') === dateStr
     );
@@ -187,6 +197,7 @@ const SpaceDetail = () => {
       return false;
     }
     
+    // Check if date is in space's availability
     if (availableDates.length > 0) {
       return availableDates.some(availableDate => 
         format(availableDate, 'yyyy-MM-dd') === dateStr
