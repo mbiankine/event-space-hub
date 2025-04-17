@@ -26,15 +26,17 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
   return (
     <div className="col-span-1 lg:col-span-3">
       <Tabs defaultValue="spaces" className="h-full flex flex-col">
-        <TabsList>
-          <TabsTrigger value="spaces">Meus Espaços</TabsTrigger>
-          <TabsTrigger value="bookings">Reservas</TabsTrigger>
-          <TabsTrigger value="analytics">Análises</TabsTrigger>
-        </TabsList>
+        <div className="flex justify-between items-center">
+          <TabsList>
+            <TabsTrigger value="spaces">Meus Espaços</TabsTrigger>
+            <TabsTrigger value="bookings">Reservas</TabsTrigger>
+            <TabsTrigger value="analytics">Análises</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="spaces" className="flex-1 space-y-4 mt-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Meus Espaços</h2>
+            <h2 className="text-xl font-semibold text-left">Meus Espaços</h2>
             <Button variant="outline" size="sm" asChild>
               <Link to="/host/spaces">Ver todos</Link>
             </Button>
@@ -44,7 +46,7 @@ export const DashboardTabs = ({ spaces, bookings, isLoading }: DashboardTabsProp
 
         <TabsContent value="bookings" className="flex-1 space-y-4 mt-4">
           <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-semibold">Próximas Reservas</h2>
+            <h2 className="text-xl font-semibold text-left">Próximas Reservas</h2>
             <Button variant="outline" asChild>
               <Link to="/host/bookings">
                 <Calendar className="h-4 w-4 mr-2" />

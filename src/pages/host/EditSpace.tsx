@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { SpaceForm } from '@/components/host/SpaceForm';
 import { SpaceFormValues } from '@/components/host/forms/types';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/host/LoadingState';
+import { HostLayout } from '@/components/layouts/HostLayout';
 
 const EditSpace = () => {
   const { id } = useParams<{ id: string }>();
@@ -116,13 +115,12 @@ const EditSpace = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8 flex items-center justify-center">
-          <LoadingState />
-        </main>
-        <Footer />
-      </div>
+      <HostLayout
+        title="Editar Espaço"
+        description="Carregando dados do espaço..."
+      >
+        <LoadingState />
+      </HostLayout>
     );
   }
 
@@ -143,22 +141,16 @@ const EditSpace = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container px-4 md:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Editar Espaço</h1>
-          <p className="text-muted-foreground">Atualize as informações do seu espaço</p>
-        </div>
-        
-        <SpaceForm 
-          initialValues={initialValues} 
-          onSubmit={handleSubmit} 
-          isSubmitting={isSubmitting} 
-        />
-      </main>
-      <Footer />
-    </div>
+    <HostLayout
+      title="Editar Espaço"
+      description="Atualize as informações do seu espaço"
+    >
+      <SpaceForm 
+        initialValues={initialValues} 
+        onSubmit={handleSubmit} 
+        isSubmitting={isSubmitting} 
+      />
+    </HostLayout>
   );
 };
 

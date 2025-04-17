@@ -16,7 +16,7 @@ export const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Tentar obter a localização do usuário quando o componente é montado
+    // Try to get the user's location when the component mounts
     getUserLocation();
   }, []);
 
@@ -25,7 +25,7 @@ export const SearchBar = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         position => {
-          // Usar a API de geocodificação reversa para obter cidade/estado
+          // Use reverse geocoding API to get city/state
           fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&accept-language=pt-BR`)
             .then(response => response.json())
             .then(data => {
@@ -56,12 +56,12 @@ export const SearchBar = () => {
   const handleSearch = () => {
     const locationString = location ? `${location.city}, ${location.state}` : '';
     console.log(`Pesquisando: ${searchQuery}, Localização: ${locationString}`);
-    // Aqui você implementaria a busca real
-    // Por exemplo, navegando para uma página de resultados ou filtrando os espaços
+    // Here you would implement the actual search
+    // For example, navigating to a results page or filtering spaces
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-background p-2 rounded-full border shadow-sm flex items-center">
+    <div className="w-full max-w-4xl mx-auto bg-background p-2 rounded-full border border-border shadow-sm flex items-center">
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2 min-w-[140px] justify-start py-6 px-4 border-r border-border">
@@ -71,7 +71,7 @@ export const SearchBar = () => {
             </span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 w-72">
+        <PopoverContent className="p-0 w-72 bg-background">
           <div className="p-4">
             <div className="mb-4">
               <h4 className="text-sm font-medium mb-2">Encontrar espaços em</h4>
@@ -103,10 +103,10 @@ export const SearchBar = () => {
             <span className="text-sm truncate">Data</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent>
+        <PopoverContent className="bg-background">
           <div className="p-4">
             <h4 className="text-sm font-medium mb-2">Selecione uma data</h4>
-            {/* Aqui você pode adicionar um seletor de data */}
+            {/* Here you can add a date selector */}
             <p className="text-sm text-muted-foreground">Funcionalidade de calendário a ser implementada</p>
           </div>
         </PopoverContent>
@@ -119,10 +119,10 @@ export const SearchBar = () => {
             <span className="text-sm truncate">Convidados</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent>
+        <PopoverContent className="bg-background">
           <div className="p-4">
             <h4 className="text-sm font-medium mb-2">Número de convidados</h4>
-            {/* Aqui você pode adicionar um seletor de quantidade */}
+            {/* Here you can add a quantity selector */}
             <p className="text-sm text-muted-foreground">Funcionalidade de convidados a ser implementada</p>
           </div>
         </PopoverContent>
