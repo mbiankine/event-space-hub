@@ -8,7 +8,7 @@ export function useStripeConfig() {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
-  async function startStripeCheckout(spaceId: string, price: number, days?: number) {
+  async function startStripeCheckout(spaceId: string, price: number, days?: number, bookingId?: string) {
     try {
       setIsLoading(true);
       
@@ -23,7 +23,8 @@ export function useStripeConfig() {
           price,
           user_id: user.id,
           user_email: user.email,
-          days 
+          days,
+          booking_id: bookingId
         }
       });
       

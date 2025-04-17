@@ -330,7 +330,7 @@ const SpaceDetail = () => {
       days = selectedDays;
     }
     
-    await startStripeCheckout(space.id, price, days);
+    await startStripeCheckout(space.id, price, days, confirmedBookingId);
   };
   
   const handleCloseBookingModal = () => {

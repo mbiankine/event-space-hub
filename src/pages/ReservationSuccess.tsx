@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 const ReservationSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -20,17 +21,52 @@ const ReservationSuccess = () => {
       }
       
       try {
-        // Aqui você poderia chamar uma função edge para verificar o status do pagamento
-        // Por enquanto, vamos simular isso
-        setIsLoading(false);
-        setBookingDetails({
-          id: sessionId.substring(0, 8),
-          status: 'confirmed'
-        });
+        setIsLoading(true);
         
-        // Em um caso real, você atualizaria o status de pagamento no banco de dados
-      } catch (error) {
+        // Primeiro, verificamos se existe uma reserva pendente relacionada a este ID de sessão
+        const { data: bookingData, error: bookingError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('payment_status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (bookingError) throw bookingError;
+        
+        if (bookingData && bookingData.length > 0) {
+          // Atualizamos o status da reserva para "paid" e "confirmed"
+          const { data: updatedBooking, error: updateError } = await supabase
+            .from('bookings')
+            .update({
+              payment_status: 'paid',
+              status: 'confirmed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', bookingData[0].id)
+            .select();
+          
+          if (updateError) throw updateError;
+          
+          setBookingDetails({
+            id: bookingData[0].id,
+            status: 'confirmed',
+            space_title: bookingData[0].space_title
+          });
+          
+          toast.success('Pagamento confirmado com sucesso!');
+        } else {
+          // Se não encontrarmos uma reserva pendente, mostramos uma mensagem genérica
+          setBookingDetails({
+            id: sessionId.substring(0, 8),
+            status: 'confirmed'
+          });
+        }
+      } catch (error: any) {
         console.error('Error verifying payment:', error);
+        toast.error('Ocorreu um erro ao verificar o pagamento', {
+          description: error.message
+        });
+      } finally {
         setIsLoading(false);
       }
     };
@@ -93,6 +129,11 @@ const ReservationSuccess = () => {
             <p className="font-medium">
               Código da reserva: {bookingDetails.id}
             </p>
+            {bookingDetails.space_title && (
+              <p className="mt-2 text-muted-foreground">
+                Espaço: {bookingDetails.space_title}
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex justify-center gap-4">

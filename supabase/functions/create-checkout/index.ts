@@ -18,13 +18,13 @@ serve(async (req) => {
     console.log("Starting checkout process...");
     
     // Parse request body
-    const { space_id, price, days } = await req.json();
+    const { space_id, price, days, booking_id } = await req.json();
 
     if (!space_id || !price) {
       throw new Error("space_id and price are required");
     }
     
-    console.log(`Checkout request: space_id=${space_id}, price=${price}, days=${days || 'not specified'}`);
+    console.log(`Checkout request: space_id=${space_id}, price=${price}, days=${days || 'not specified'}, booking_id=${booking_id || 'not specified'}`);
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -183,12 +183,30 @@ serve(async (req) => {
         space_id,
         host_id: spaceData.host_id,
         client_id: user.id,
-        days: days || 1
+        days: days || 1,
+        booking_id: booking_id || undefined
       }
     });
     
     console.log(`Checkout session created: ${session.id}`);
     console.log(`Checkout URL: ${session.url}`);
+
+    // Se temos um booking_id, atualizamos o registro com o session_id
+    if (booking_id) {
+      console.log(`Updating booking ${booking_id} with session_id ${session.id}`);
+      const { error: updateError } = await supabaseAdmin
+        .from('bookings')
+        .update({ 
+          stripe_session_id: session.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', booking_id);
+      
+      if (updateError) {
+        console.error(`Error updating booking with session_id: ${updateError.message}`);
+        // Continuamos mesmo se houver erro, já que o checkout ainda pode funcionar
+      }
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
