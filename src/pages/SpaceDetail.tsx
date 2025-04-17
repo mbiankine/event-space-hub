@@ -24,7 +24,7 @@ import { BookingFormModal } from "@/components/space/BookingFormModal";
 import { useStripeConfig } from "@/hooks/useStripeConfig";
 import { InquiryForm } from "@/components/space/InquiryForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HostProfileCard } from "@/components/host/HostProfileCard";
+import { HostProfileCard } from "@/components/space/host/HostProfileCard";
 
 const bookingFormSchema = z.object({
   name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }),
