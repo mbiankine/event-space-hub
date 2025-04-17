@@ -31,12 +31,13 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { Booking } from "@/types/BookingTypes";
 
 const BookingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [booking, setBooking] = useState<any>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [space, setSpace] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +63,7 @@ const BookingDetail = () => {
           return;
         }
         
-        setBooking(bookingData);
+        setBooking(bookingData as Booking);
         
         // Fetch space
         if (bookingData.space_id) {
@@ -97,6 +98,8 @@ const BookingDetail = () => {
   }, [user, id, navigate]);
 
   const handleUpdateStatus = async (newStatus: string) => {
+    if (!id) return;
+    
     try {
       const { error } = await supabase
         .from('bookings')
@@ -106,7 +109,7 @@ const BookingDetail = () => {
       if (error) throw error;
       
       // Update local state
-      setBooking({ ...booking, status: newStatus });
+      setBooking(booking ? { ...booking, status: newStatus } : null);
       toast.success(`Reserva ${newStatus === 'confirmed' ? 'confirmada' : 'atualizada'} com sucesso`);
     } catch (error) {
       console.error('Error updating booking status:', error);

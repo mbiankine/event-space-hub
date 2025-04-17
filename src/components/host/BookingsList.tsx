@@ -5,9 +5,10 @@ import { Calendar, Clock, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Booking } from "@/types/BookingTypes";
 
 interface BookingsListProps {
-  bookings: any[];
+  bookings: Booking[];
 }
 
 export const BookingsList = ({ bookings }: BookingsListProps) => {

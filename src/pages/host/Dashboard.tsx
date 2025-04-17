@@ -11,6 +11,7 @@ import { DashboardStats } from "@/components/host/DashboardStats";
 import { QuickMenu } from "@/components/host/QuickMenu";
 import { DashboardTabs } from "@/components/host/DashboardTabs";
 import { toast } from "sonner";
+import { Booking } from "@/types/BookingTypes";
 
 const HostDashboard = () => {
   const { profile, user } = useAuth();
@@ -22,7 +23,7 @@ const HostDashboard = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [spaces, setSpaces] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -48,7 +49,7 @@ const HostDashboard = () => {
           .limit(5);
           
         if (bookingsError) throw bookingsError;
-        setBookings(bookingsData || []);
+        setBookings(bookingsData as Booking[] || []);
         
         // Calculate stats
         const totalSpacesCount = spacesData?.length || 0;

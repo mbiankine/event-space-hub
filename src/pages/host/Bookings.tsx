@@ -38,6 +38,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { Booking } from "@/types/BookingTypes";
 
 const BookingStatus = ({ status }: { status: string }) => {
   const getStatusColor = () => {
@@ -79,7 +80,7 @@ const BookingStatus = ({ status }: { status: string }) => {
 
 const HostBookings = () => {
   const { user } = useAuth();
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -112,7 +113,7 @@ const HostBookings = () => {
           
         if (error) throw error;
         
-        setBookings(data || []);
+        setBookings(data as Booking[] || []);
         setTotalPages(Math.ceil((count || 0) / itemsPerPage));
       } catch (error) {
         console.error('Error fetching bookings:', error);

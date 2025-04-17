@@ -9,6 +9,89 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          additional_services_price: number | null
+          booking_date: string
+          client_email: string | null
+          client_id: string
+          client_name: string | null
+          client_phone: string | null
+          created_at: string | null
+          end_time: string | null
+          event_type: string | null
+          guest_count: number | null
+          host_id: string
+          id: string
+          notes: string | null
+          payment_status: string | null
+          service_fee: number | null
+          space_id: string
+          space_price: number | null
+          space_title: string | null
+          start_time: string | null
+          status: string | null
+          total_price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          additional_services_price?: number | null
+          booking_date: string
+          client_email?: string | null
+          client_id: string
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          guest_count?: number | null
+          host_id: string
+          id?: string
+          notes?: string | null
+          payment_status?: string | null
+          service_fee?: number | null
+          space_id: string
+          space_price?: number | null
+          space_title?: string | null
+          start_time?: string | null
+          status?: string | null
+          total_price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          additional_services_price?: number | null
+          booking_date?: string
+          client_email?: string | null
+          client_id?: string
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          guest_count?: number | null
+          host_id?: string
+          id?: string
+          notes?: string | null
+          payment_status?: string | null
+          service_fee?: number | null
+          space_id?: string
+          space_price?: number | null
+          space_title?: string | null
+          start_time?: string | null
+          status?: string | null
+          total_price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

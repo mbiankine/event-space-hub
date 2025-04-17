@@ -6,10 +6,11 @@ import { Link } from "react-router-dom";
 import { AnalyticsContent } from "./AnalyticsContent";
 import { BookingsList } from "./BookingsList";
 import { SpacesList } from "./SpacesList";
+import { Booking } from "@/types/BookingTypes";
 
 interface DashboardTabsProps {
   spaces: any[];
-  bookings: any[];
+  bookings: Booking[];
   isLoading: boolean;
 }
 
