@@ -20,10 +20,18 @@ interface SpaceFormProps {
 }
 
 export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: SpaceFormProps) {
-  const { form, isValid, imagesValidated, handleImageUpload } = useSpaceForm(initialValues);
+  const { form, isValid, imagesValidated, handleImageUpload, isFormValid } = useSpaceForm(initialValues);
   
   const handleSubmit = async (values: SpaceFormValues) => {
     try {
+      // Validar novamente antes de submeter
+      const formIsValid = await isFormValid();
+      
+      if (!formIsValid) {
+        toast.error("Por favor, preencha todos os campos obrigatórios");
+        return;
+      }
+      
       await onSubmit(values);
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -32,7 +40,8 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
   };
 
   const errorCount = Object.keys(form.formState.errors).length;
-  const buttonShouldBeEnabled = isValid && !isSubmitting && imagesValidated;
+  // Agora o botão está habilitado se o formulário estiver válido e tivermos imagens
+  const buttonShouldBeEnabled = (isValid && imagesValidated && !isSubmitting);
 
   return (
     <Form {...form}>

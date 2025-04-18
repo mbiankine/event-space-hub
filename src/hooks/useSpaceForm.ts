@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { SpaceFormValues } from '@/components/host/forms/types';
+import { toast } from 'sonner';
 
 // Schema for space validation
 const spaceFormSchema = z.object({
@@ -102,33 +103,40 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
     mode: "onChange",
   });
 
+  // Verificar o estado inicial das imagens
+  useEffect(() => {
+    const currentImages = form.getValues("images") || [];
+    if (currentImages && currentImages.length > 0) {
+      setImagesValidated(true);
+      form.clearErrors("images");
+    }
+  }, [form]);
+
   // Watch for form changes and check validity
   useEffect(() => {
-    const subscription = form.watch(() => {
+    const subscription = form.watch((values) => {
       form.trigger().then(valid => {
         setIsValid(valid);
       });
     });
+    
     return () => subscription.unsubscribe();
   }, [form]);
 
-  // Fixed useEffect to properly monitor images field
+  // Monitor specifically the images field
   useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      // Only process when images field changes
-      if (name === 'images') {
+    const subscription = form.watch((values, { name }) => {
+      if (name === 'images' || name?.startsWith('images.')) {
         const currentImages = form.getValues("images") || [];
-        setImagesValidated(currentImages.length > 0);
         
         if (currentImages.length > 0) {
+          setImagesValidated(true);
           form.clearErrors("images");
+        } else {
+          setImagesValidated(false);
         }
       }
     });
-    
-    // Initial check for existing images
-    const currentImages = form.getValues("images") || [];
-    setImagesValidated(currentImages.length > 0);
     
     return () => subscription.unsubscribe();
   }, [form]);
@@ -138,6 +146,7 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
       const currentImages = form.getValues("images") || [];
       const stringImages = currentImages.filter(img => typeof img === 'string');
       const combinedImages = [...stringImages, ...newImages];
+      
       form.setValue("images", combinedImages, { shouldValidate: true });
       
       if (combinedImages.length > 0) {
@@ -146,13 +155,36 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
       }
     } catch (error) {
       console.error("Error handling image upload:", error);
+      toast.error("Erro ao processar imagens");
     }
+  };
+
+  // Verificar explicitamente se o formulário está realmente válido
+  const isFormValid = () => {
+    // Verificar se há imagens
+    const hasImages = (form.getValues("images") || []).length > 0;
+    
+    // Se não tiver imagens, marcar o campo como erro
+    if (!hasImages) {
+      form.setError("images", { 
+        type: "manual", 
+        message: "Adicione pelo menos uma imagem" 
+      });
+      setImagesValidated(false);
+      return false;
+    }
+    
+    // Verificar outros campos com trigger
+    return form.trigger().then(isValid => {
+      return isValid && hasImages;
+    });
   };
 
   return {
     form,
     isValid,
     imagesValidated,
-    handleImageUpload
+    handleImageUpload,
+    isFormValid
   };
 };

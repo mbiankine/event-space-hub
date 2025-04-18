@@ -25,13 +25,6 @@ export function ImageUploadSection({ onChange, initialImages = [], error = false
     }
   }, [initialImages]);
 
-  // Log for debugging
-  useEffect(() => {
-    console.log("ImageUploadSection - Current images:", uploadedImages);
-    console.log("ImageUploadSection - Has error:", error);
-    console.log("ImageUploadSection - Images length:", uploadedImages.length);
-  }, [uploadedImages, error]);
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setIsLoading(true);
