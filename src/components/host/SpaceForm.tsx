@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -140,38 +139,39 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
 
   // Special effect to monitor images field specifically
   useEffect(() => {
-    const imagesSubscription = form.watch("images", []);
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'images') {
+        const currentImages = form.getValues("images") || [];
+        console.log("Images changed:", currentImages);
+        console.log("Images length:", currentImages.length);
+        
+        if (currentImages.length > 0) {
+          setImagesValidated(true);
+          form.clearErrors("images");
+          console.log("Images are valid");
+        } else {
+          setImagesValidated(false);
+          console.log("No images or invalid");
+        }
+      }
+    });
+    
     const currentImages = form.getValues("images") || [];
+    setImagesValidated(currentImages.length > 0);
     
-    console.log("Images changed:", currentImages);
-    console.log("Images length:", currentImages.length);
-    
-    if (currentImages.length > 0) {
-      setImagesValidated(true);
-      form.clearErrors("images");
-      console.log("Images are valid");
-    } else {
-      setImagesValidated(false);
-      console.log("No images or invalid");
-    }
-    
-    return () => imagesSubscription;
-  }, [form.watch("images")]);
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const handleImageUpload = (newImages: File[]) => {
     try {
-      // Get current images from form
       const currentImages = form.getValues("images") || [];
       
-      // Filter out string images (already uploaded ones)
       const stringImages = currentImages.filter(img => typeof img === 'string');
       
-      // Combine string images with new file images
       const combinedImages = [...stringImages, ...newImages];
       
       console.log("Updating form with images:", combinedImages.length);
       
-      // Update the form with combined images
       form.setValue("images", combinedImages, { shouldValidate: true });
       
       if (combinedImages.length > 0) {
