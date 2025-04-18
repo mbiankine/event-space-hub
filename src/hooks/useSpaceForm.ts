@@ -49,16 +49,20 @@ const spaceFormSchema = z.object({
     message: "Adicione pelo menos uma imagem",
   }),
 }).refine((data) => {
-  if (data.pricingType === 'daily' || data.pricingType === 'both') {
-    return typeof data.price === 'number' && data.price > 0;
+  // Validação apenas se o tipo for daily ou both E se o preço for 0 ou não informado
+  if ((data.pricingType === 'daily' || data.pricingType === 'both') && 
+      (typeof data.price !== 'number' || data.price <= 0)) {
+    return false;
   }
   return true;
 }, {
   message: "Preço por diária é obrigatório",
   path: ["price"]
 }).refine((data) => {
-  if (data.pricingType === 'hourly' || data.pricingType === 'both') {
-    return typeof data.hourlyPrice === 'number' && data.hourlyPrice > 0;
+  // Validação apenas se o tipo for hourly ou both E se o preço por hora for 0 ou não informado
+  if ((data.pricingType === 'hourly' || data.pricingType === 'both') && 
+      (typeof data.hourlyPrice !== 'number' || data.hourlyPrice <= 0)) {
+    return false;
   }
   return true;
 }, {
@@ -70,32 +74,36 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
   const [isValid, setIsValid] = useState(false);
   const [imagesValidated, setImagesValidated] = useState(false);
 
+  // Definir valores iniciais com um tipo de preço padrão
+  const defaultValues = {
+    title: "",
+    description: "",
+    location: {
+      zipCode: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      country: "Brasil",
+    },
+    pricingType: "daily", // Definido como daily por padrão
+    price: 0,
+    hourlyPrice: 0,
+    capacity: 0,
+    spaceType: "",
+    amenities: [],
+    customAmenities: [],
+    pricedAmenities: [],
+    availability: [],
+    images: [],
+  };
+
+  // Combinar com valores iniciais se fornecidos
   const form = useForm<SpaceFormValues>({
     resolver: zodResolver(spaceFormSchema),
-    defaultValues: initialValues || {
-      title: "",
-      description: "",
-      location: {
-        zipCode: "",
-        street: "",
-        number: "",
-        complement: "",
-        neighborhood: "",
-        city: "",
-        state: "",
-        country: "Brasil",
-      },
-      pricingType: "daily",
-      price: null,
-      hourlyPrice: null,
-      capacity: 0,
-      spaceType: "",
-      amenities: [],
-      customAmenities: [],
-      pricedAmenities: [],
-      availability: [],
-      images: [],
-    },
+    defaultValues: initialValues || defaultValues,
     mode: "onChange",
   });
 
@@ -142,8 +150,16 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
 
       // Adicionando validação específica para os tipos de preço
       if (name === 'pricingType' || name === 'price' || name === 'hourlyPrice') {
-        // Revalidar os campos relevantes imediatamente
-        form.trigger(['price', 'hourlyPrice']);
+        const pricingType = form.getValues("pricingType");
+        
+        // Revalidar os campos baseado no tipo de precificação
+        if (pricingType === 'daily' || pricingType === 'both') {
+          form.trigger("price");
+        }
+        
+        if (pricingType === 'hourly' || pricingType === 'both') {
+          form.trigger("hourlyPrice");
+        }
       }
     });
     

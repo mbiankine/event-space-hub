@@ -82,7 +82,7 @@ export function PricingSection({ control, watch }: PricingSectionProps) {
                     placeholder="0.00" 
                     {...field} 
                     onChange={(e) => {
-                      const value = e.target.value ? parseFloat(e.target.value) : 0;
+                      const value = parseFloat(e.target.value || "0");
                       field.onChange(value);
                     }}
                   />
@@ -110,7 +110,7 @@ export function PricingSection({ control, watch }: PricingSectionProps) {
                     placeholder="0.00" 
                     {...field}
                     onChange={(e) => {
-                      const value = e.target.value ? parseFloat(e.target.value) : 0;
+                      const value = parseFloat(e.target.value || "0");
                       field.onChange(value);
                     }} 
                   />

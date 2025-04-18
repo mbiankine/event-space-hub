@@ -32,12 +32,39 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
         return;
       }
       
+      // Se o pricingType é daily, certifique-se de que o preço está definido
+      if ((values.pricingType === "daily" || values.pricingType === "both") && 
+          (!values.price || values.price <= 0)) {
+        toast.error("Por favor, defina o preço por diária");
+        return;
+      }
+      
+      // Se o pricingType é hourly, certifique-se de que o preço por hora está definido
+      if ((values.pricingType === "hourly" || values.pricingType === "both") && 
+          (!values.hourlyPrice || values.hourlyPrice <= 0)) {
+        toast.error("Por favor, defina o preço por hora");
+        return;
+      }
+      
       await onSubmit(values);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast.error("Erro ao salvar espaço");
     }
   };
+
+  // Defina valores padrão para os preços com base no tipo de precificação
+  React.useEffect(() => {
+    const pricingType = form.watch("pricingType");
+    const price = form.watch("price");
+    const hourlyPrice = form.watch("hourlyPrice");
+    
+    if (pricingType === "daily" && !price) {
+      form.setValue("price", 0);
+    } else if (pricingType === "hourly" && !hourlyPrice) {
+      form.setValue("hourlyPrice", 0);
+    }
+  }, [form.watch("pricingType"), form]);
 
   // O botão está habilitado se o formulário estiver válido e tivermos imagens
   const buttonShouldBeEnabled = (isValid && imagesValidated && !isSubmitting);
