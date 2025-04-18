@@ -112,17 +112,25 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
     return () => subscription.unsubscribe();
   }, [form]);
 
-  // Monitor images field specifically
+  // Fixed useEffect to properly monitor images field
   useEffect(() => {
-    const subscription = form.watch("images", (value) => {
-      const currentImages = value || [];
-      setImagesValidated(currentImages.length > 0);
-      
-      if (currentImages.length > 0) {
-        form.clearErrors("images");
+    const subscription = form.watch((value, { name }) => {
+      // Only process when images field changes
+      if (name === 'images') {
+        const currentImages = form.getValues("images") || [];
+        setImagesValidated(currentImages.length > 0);
+        
+        if (currentImages.length > 0) {
+          form.clearErrors("images");
+        }
       }
     });
-    return () => subscription;
+    
+    // Initial check for existing images
+    const currentImages = form.getValues("images") || [];
+    setImagesValidated(currentImages.length > 0);
+    
+    return () => subscription.unsubscribe();
   }, [form]);
 
   const handleImageUpload = (newImages: File[]) => {
