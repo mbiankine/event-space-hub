@@ -75,7 +75,7 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
   const [imagesValidated, setImagesValidated] = useState(false);
 
   // Definir valores iniciais com um tipo de preço padrão
-  const defaultValues = {
+  const defaultValues: Partial<SpaceFormValues> = {
     title: "",
     description: "",
     location: {
@@ -88,7 +88,7 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
       state: "",
       country: "Brasil",
     },
-    pricingType: "daily", // Definido como daily por padrão
+    pricingType: "daily" as const, // Explicitly type as 'daily' literal type
     price: 0,
     hourlyPrice: 0,
     capacity: 0,
