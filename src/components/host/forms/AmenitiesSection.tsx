@@ -7,11 +7,7 @@ import { CustomAmenitiesSection } from './amenities/CustomAmenitiesSection';
 import { PricedAmenitiesSection } from './amenities/PricedAmenitiesSection';
 import { PricedAmenityDialog } from './amenities/PricedAmenityDialog';
 import { useAmenities } from '@/hooks/useAmenities';
-
-interface AmenitiesSectionProps {
-  control: Control<SpaceFormValues>;
-  form: any;
-}
+import { AmenitiesSectionProps } from './types/form-section';
 
 export function AmenitiesSection({ control, form }: AmenitiesSectionProps) {
   const {
@@ -33,34 +29,36 @@ export function AmenitiesSection({ control, form }: AmenitiesSectionProps) {
 
   return (
     <FormSection title="Comodidades">
-      <BasicAmenitiesSection 
-        selectedAmenities={selectedAmenities}
-        onToggle={handleAmenityToggle}
-      />
+      <div className="space-y-6">
+        <BasicAmenitiesSection 
+          selectedAmenities={selectedAmenities}
+          onToggle={handleAmenityToggle}
+        />
 
-      <CustomAmenitiesSection
-        customAmenities={customAmenities}
-        onAdd={handleAddCustomAmenity}
-        onRemove={handleRemoveCustomAmenity}
-        newAmenity={newAmenity}
-        onNewAmenityChange={setNewAmenity}
-      />
+        <CustomAmenitiesSection
+          customAmenities={customAmenities}
+          onAdd={handleAddCustomAmenity}
+          onRemove={handleRemoveCustomAmenity}
+          newAmenity={newAmenity}
+          onNewAmenityChange={setNewAmenity}
+        />
 
-      <PricedAmenitiesSection
-        pricedAmenities={pricedAmenities}
-        onRemove={handleRemovePricedAmenity}
-        onAdd={() => setIsAddPricedAmenityOpen(true)}
-        isDialogOpen={isAddPricedAmenityOpen}
-        onOpenChange={setIsAddPricedAmenityOpen}
-      />
+        <PricedAmenitiesSection
+          pricedAmenities={pricedAmenities}
+          onRemove={handleRemovePricedAmenity}
+          onAdd={() => setIsAddPricedAmenityOpen(true)}
+          isDialogOpen={isAddPricedAmenityOpen}
+          onOpenChange={setIsAddPricedAmenityOpen}
+        />
 
-      <PricedAmenityDialog
-        open={isAddPricedAmenityOpen}
-        onOpenChange={setIsAddPricedAmenityOpen}
-        newPricedAmenity={newPricedAmenity}
-        onNewPricedAmenityChange={handlePricedAmenityChange}
-        onAdd={handleAddPricedAmenity}
-      />
+        <PricedAmenityDialog
+          open={isAddPricedAmenityOpen}
+          onOpenChange={setIsAddPricedAmenityOpen}
+          newPricedAmenity={newPricedAmenity}
+          onNewPricedAmenityChange={handlePricedAmenityChange}
+          onAdd={handleAddPricedAmenity}
+        />
+      </div>
     </FormSection>
   );
 }
