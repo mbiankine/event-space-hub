@@ -1,5 +1,5 @@
 
-import { X, DollarSign } from 'lucide-react';
+import { X, DollarSign, Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { PricedAmenityDialog } from './PricedAmenityDialog';
 import { CustomAmenity } from "@/types/SpaceTypes";
