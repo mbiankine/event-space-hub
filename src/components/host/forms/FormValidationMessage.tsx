@@ -1,11 +1,22 @@
 
 import { AlertCircle } from 'lucide-react';
+import { FieldErrors } from 'react-hook-form';
+import { SpaceFormValues } from './types';
 
 interface FormValidationMessageProps {
-  errorCount: number;
+  errors: FieldErrors<SpaceFormValues>;
 }
 
-export function FormValidationMessage({ errorCount }: FormValidationMessageProps) {
+export function FormValidationMessage({ errors }: FormValidationMessageProps) {
+  // Count actual errors (excluding nested objects)
+  const errorCount = Object.keys(errors).filter(key => {
+    // Don't count parent objects that have nested errors
+    if (typeof errors[key] === 'object' && errors[key]?.type !== 'manual') {
+      return false;
+    }
+    return true;
+  }).length;
+
   if (errorCount === 0) return null;
 
   return (

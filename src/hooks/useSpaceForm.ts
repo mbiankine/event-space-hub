@@ -115,9 +115,16 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
   // Watch for form changes and check validity
   useEffect(() => {
     const subscription = form.watch((values) => {
-      form.trigger().then(valid => {
-        setIsValid(valid);
+      // Count only top-level errors, ignoring nested structure
+      const hasErrors = Object.keys(form.formState.errors).some(key => {
+        // Don't count parent objects that have nested errors
+        if (typeof form.formState.errors[key] === 'object' && form.formState.errors[key]?.type !== 'manual') {
+          return false;
+        }
+        return true;
       });
+
+      setIsValid(!hasErrors);
     });
     
     return () => subscription.unsubscribe();
@@ -160,7 +167,7 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
   };
 
   // Verificar explicitamente se o formulário está realmente válido
-  const isFormValid = () => {
+  const isFormValid = async () => {
     // Verificar se há imagens
     const hasImages = (form.getValues("images") || []).length > 0;
     

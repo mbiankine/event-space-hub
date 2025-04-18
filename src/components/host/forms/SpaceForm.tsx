@@ -39,14 +39,13 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     }
   };
 
-  const errorCount = Object.keys(form.formState.errors).length;
   // Agora o botão está habilitado se o formulário estiver válido e tivermos imagens
   const buttonShouldBeEnabled = (isValid && imagesValidated && !isSubmitting);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 text-foreground">
-        <FormValidationMessage errorCount={errorCount} />
+        <FormValidationMessage errors={form.formState.errors} />
         
         <BasicInfoSection control={form.control} />
         <PricingSection control={form.control} watch={form.watch} />
