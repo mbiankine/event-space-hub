@@ -54,7 +54,7 @@ const AddNewSpace = () => {
         hourlyPrice = parseFloat(values.hourlyPrice?.toString() || '0') || 0;
       }
 
-      // Prepare space data
+      // Prepare space data - removed the 'active' field that was causing the error
       const spaceToInsert = {
         title: values.title,
         description: values.description,
@@ -68,7 +68,6 @@ const AddNewSpace = () => {
         pricing_type: values.pricingType,
         price: price,
         hourly_price: hourlyPrice,
-        active: true,
         created_at: new Date().toISOString()
       };
 

@@ -86,7 +86,7 @@ const EditSpace = () => {
       // Prepare all amenities
       const allAmenities = values.amenities.concat(values.customAmenities || []);
       
-      // Update space data
+      // Update space data - removed any reference to 'active' field
       const { error } = await supabase
         .from('spaces')
         .update({
