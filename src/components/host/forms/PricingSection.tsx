@@ -81,6 +81,10 @@ export function PricingSection({ control, watch }: PricingSectionProps) {
                     className="pl-10" 
                     placeholder="0.00" 
                     {...field} 
+                    onChange={(e) => {
+                      const value = e.target.value ? parseFloat(e.target.value) : 0;
+                      field.onChange(value);
+                    }}
                   />
                 </div>
               </FormControl>
@@ -104,7 +108,11 @@ export function PricingSection({ control, watch }: PricingSectionProps) {
                     type="number" 
                     className="pl-10" 
                     placeholder="0.00" 
-                    {...field} 
+                    {...field}
+                    onChange={(e) => {
+                      const value = e.target.value ? parseFloat(e.target.value) : 0;
+                      field.onChange(value);
+                    }} 
                   />
                 </div>
               </FormControl>

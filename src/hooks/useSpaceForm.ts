@@ -25,12 +25,8 @@ const spaceFormSchema = z.object({
     country: z.string().default("Brasil"),
   }),
   pricingType: z.enum(['daily', 'hourly', 'both']),
-  price: z.coerce.number().positive({
-    message: "O preço deve ser um valor positivo",
-  }).optional().nullable(),
-  hourlyPrice: z.coerce.number().positive({
-    message: "O preço por hora deve ser um valor positivo",
-  }).optional().nullable(),
+  price: z.coerce.number().optional().nullable(),
+  hourlyPrice: z.coerce.number().optional().nullable(),
   capacity: z.coerce.number().positive({
     message: "A capacidade deve ser um número positivo",
   }),
@@ -54,7 +50,7 @@ const spaceFormSchema = z.object({
   }),
 }).refine((data) => {
   if (data.pricingType === 'daily' || data.pricingType === 'both') {
-    return !!data.price && data.price > 0;
+    return typeof data.price === 'number' && data.price > 0;
   }
   return true;
 }, {
@@ -62,7 +58,7 @@ const spaceFormSchema = z.object({
   path: ["price"]
 }).refine((data) => {
   if (data.pricingType === 'hourly' || data.pricingType === 'both') {
-    return !!data.hourlyPrice && data.hourlyPrice > 0;
+    return typeof data.hourlyPrice === 'number' && data.hourlyPrice > 0;
   }
   return true;
 }, {
@@ -90,8 +86,8 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
         country: "Brasil",
       },
       pricingType: "daily",
-      price: 0,
-      hourlyPrice: 0,
+      price: null,
+      hourlyPrice: null,
       capacity: 0,
       spaceType: "",
       amenities: [],
@@ -143,6 +139,12 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
           setImagesValidated(false);
         }
       }
+
+      // Adicionando validação específica para os tipos de preço
+      if (name === 'pricingType' || name === 'price' || name === 'hourlyPrice') {
+        // Revalidar os campos relevantes imediatamente
+        form.trigger(['price', 'hourlyPrice']);
+      }
     });
     
     return () => subscription.unsubscribe();
@@ -181,10 +183,37 @@ export const useSpaceForm = (initialValues?: Partial<SpaceFormValues>) => {
       return false;
     }
     
+    // Verificar preços com base no tipo de precificação
+    const pricingType = form.getValues("pricingType");
+    const price = form.getValues("price");
+    const hourlyPrice = form.getValues("hourlyPrice");
+    
+    let priceValid = true;
+    
+    if (pricingType === 'daily' || pricingType === 'both') {
+      if (typeof price !== 'number' || price <= 0) {
+        form.setError("price", {
+          type: "manual",
+          message: "Preço por diária é obrigatório"
+        });
+        priceValid = false;
+      }
+    }
+    
+    if (pricingType === 'hourly' || pricingType === 'both') {
+      if (typeof hourlyPrice !== 'number' || hourlyPrice <= 0) {
+        form.setError("hourlyPrice", {
+          type: "manual",
+          message: "Preço por hora é obrigatório"
+        });
+        priceValid = false;
+      }
+    }
+    
     // Verificar outros campos com trigger
-    return form.trigger().then(isValid => {
-      return isValid && hasImages;
-    });
+    const formValid = await form.trigger();
+    
+    return formValid && hasImages && priceValid;
   };
 
   return {

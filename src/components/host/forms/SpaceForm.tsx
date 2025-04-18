@@ -39,7 +39,7 @@ export function SpaceForm({ initialValues, onSubmit, isSubmitting = false }: Spa
     }
   };
 
-  // Agora o botão está habilitado se o formulário estiver válido e tivermos imagens
+  // O botão está habilitado se o formulário estiver válido e tivermos imagens
   const buttonShouldBeEnabled = (isValid && imagesValidated && !isSubmitting);
 
   return (
