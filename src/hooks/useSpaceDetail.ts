@@ -38,10 +38,12 @@ export const useSpaceDetail = (id: string | undefined) => {
         const customAmenities: CustomAmenity[] = Array.isArray(data.custom_amenities) 
           ? data.custom_amenities.map((amenity: Json) => {
               if (typeof amenity === 'object' && amenity !== null) {
+                // Safely access properties with type checking
+                const amenityObj = amenity as Record<string, Json>;
                 return {
-                  name: String(amenity.name || ''),
-                  price: Number(amenity.price || 0),
-                  description: amenity.description ? String(amenity.description) : undefined
+                  name: amenityObj.name ? String(amenityObj.name) : '',
+                  price: amenityObj.price ? Number(amenityObj.price) : 0,
+                  description: amenityObj.description ? String(amenityObj.description) : undefined
                 };
               }
               return { name: '', price: 0 };
