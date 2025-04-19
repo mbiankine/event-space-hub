@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter 
@@ -10,6 +11,9 @@ import { BookingDateSection } from './booking/BookingDateSection';
 import { GuestCounter } from './booking/GuestCounter';
 import { DurationSelector } from './booking/DurationSelector';
 import { BookingPriceSection } from './booking/BookingPriceSection';
+import { CheckInOutSelector } from './booking/CheckInOutSelector';
+import { AdditionalAmenitiesSelector } from './booking/AdditionalAmenitiesSelector';
+import { CustomAmenity } from '@/types/SpaceTypes';
 
 interface BookingCardProps {
   space: any;
@@ -49,6 +53,9 @@ export function BookingCard({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
   const [selectedDateRange, setSelectedDateRange] = useState<Date[]>([]);
+  const [checkInTime, setCheckInTime] = useState("14:00");
+  const [checkOutTime, setCheckOutTime] = useState("12:00");
+  const [selectedAmenities, setSelectedAmenities] = useState<CustomAmenity[]>([]);
 
   useEffect(() => {
     if (date && bookingType === 'daily' && selectedDays > 1) {
@@ -82,12 +89,23 @@ export function BookingCard({
   };
 
   const calculatePrice = () => {
-    if (bookingType === 'hourly' && space.hourly_price) {
-      return space.hourly_price * selectedHours;
-    } else if (bookingType === 'daily') {
-      return space.price * selectedDays;
-    }
-    return space.price;
+    const basePrice = bookingType === 'hourly' && space.hourly_price 
+      ? space.hourly_price * selectedHours 
+      : space.price * selectedDays;
+      
+    const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => 
+      sum + (amenity.price || 0), 0
+    );
+    
+    return basePrice + amenitiesTotal;
+  };
+
+  const handleAmenityToggle = (amenity: CustomAmenity) => {
+    setSelectedAmenities(current =>
+      current.some(a => a.name === amenity.name)
+        ? current.filter(a => a.name !== amenity.name)
+        : [...current, amenity]
+    );
   };
 
   const handleReserveClick = async () => {
@@ -148,6 +166,16 @@ export function BookingCard({
             maxCapacity={space.capacity}
           />
           
+          {bookingType === 'daily' && (
+            <CheckInOutSelector
+              checkInTime={checkInTime}
+              checkOutTime={checkOutTime}
+              onCheckInChange={setCheckInTime}
+              onCheckOutChange={setCheckOutTime}
+              disabled={!date || isProcessingPayment}
+            />
+          )}
+          
           <DurationSelector
             bookingType={bookingType}
             selectedHours={selectedHours}
@@ -158,12 +186,22 @@ export function BookingCard({
             isDateAvailable={isDateAvailable}
           />
           
+          {space.custom_amenities && space.custom_amenities.length > 0 && (
+            <AdditionalAmenitiesSelector
+              amenities={space.custom_amenities.filter(amenity => amenity.price && amenity.price > 0)}
+              selectedAmenities={selectedAmenities}
+              onAmenityToggle={handleAmenityToggle}
+              disabled={isProcessingPayment}
+            />
+          )}
+          
           <BookingPriceSection
             bookingType={bookingType}
             selectedHours={selectedHours}
             selectedDays={selectedDays}
             space={space}
             calculatePrice={calculatePrice}
+            selectedAmenities={selectedAmenities}
           />
         </CardContent>
         <CardFooter>

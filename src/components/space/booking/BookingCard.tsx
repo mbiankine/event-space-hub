@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import { 
@@ -8,15 +9,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { BookingTypeSection } from './BookingTypeSection';
 import { BookingDateSection } from './BookingDateSection';
 import { BookingPriceSection } from './BookingPriceSection';
+import { DurationSelector } from './DurationSelector';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { CheckInOutSelector } from './CheckInOutSelector';
 import { AdditionalAmenitiesSelector } from './AdditionalAmenitiesSelector';
-import { formatCurrency } from '@/lib/utils';
 import { CustomAmenity } from '@/types/SpaceTypes';
 
 interface BookingCardProps {
-  space: any;
+  space: {
+    hourly_price: number;
+    price: number;
+    pricing_type: string;
+    capacity: number;
+    custom_amenities: CustomAmenity[];
+  };
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
   guests: number;
@@ -30,13 +37,6 @@ interface BookingCardProps {
   isDateAvailable: (date: Date) => boolean;
   handleBookNow: () => Promise<{ success: boolean, bookingId?: string }>;
   unavailableDates: Date[];
-  space: {
-    hourly_price: number;
-    price: number;
-    pricing_type: string;
-    capacity: number;
-    custom_amenities: CustomAmenity[];
-  };
 }
 
 export function BookingCard({
@@ -97,12 +97,15 @@ export function BookingCard({
   };
 
   const calculatePrice = () => {
-    if (bookingType === 'hourly' && space.hourly_price) {
-      return space.hourly_price * selectedHours;
-    } else if (bookingType === 'daily') {
-      return space.price * selectedDays;
-    }
-    return space.price;
+    const basePrice = bookingType === 'hourly' && space.hourly_price
+      ? space.hourly_price * selectedHours
+      : space.price * selectedDays;
+      
+    const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => 
+      sum + (amenity.price || 0), 0
+    );
+    
+    return basePrice + amenitiesTotal;
   };
 
   const handleAmenityToggle = (amenity: CustomAmenity) => {
@@ -113,18 +116,9 @@ export function BookingCard({
     );
   };
 
-  const calculateTotalPrice = () => {
-    const basePrice = calculatePrice();
-    const amenitiesPrice = selectedAmenities.reduce((sum, amenity) => 
-      sum + (amenity.price || 0), 0
-    );
-    return basePrice + amenitiesPrice;
-  };
-
   const handleReserveClick = async () => {
     if (!user) {
-      const result = await handleBookNow();
-      return result;
+      return await handleBookNow();
     }
 
     try {
@@ -157,33 +151,6 @@ export function BookingCard({
       ? Math.min(space.capacity, guests + 25)
       : Math.max(1, guests - 25);
     setGuests(newValue);
-  };
-
-  const handleHoursChange = (increment: boolean) => {
-    const newValue = increment
-      ? Math.min(24, selectedHours + 1)
-      : Math.max(1, selectedHours - 1);
-    setSelectedHours(newValue);
-  };
-
-  const handleDaysChange = (increment: boolean) => {
-    if (!increment && selectedDays <= 1) return;
-    
-    const newValue = increment
-      ? Math.min(30, selectedDays + 1)
-      : Math.max(1, selectedDays - 1);
-    
-    if (increment && date) {
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + selectedDays);
-      if (!isDateAvailable(nextDate)) {
-        toast.info("Não é possível adicionar mais dias consecutivos devido à indisponibilidade de datas.");
-        return;
-      }
-    }
-    
-    setSelectedDays(newValue);
-    if (date) calculatePossibleDateRange(date);
   };
 
   return (
@@ -280,7 +247,7 @@ export function BookingCard({
             selectedHours={selectedHours}
             selectedDays={selectedDays}
             space={space}
-            calculatePrice={calculateTotalPrice}
+            calculatePrice={calculatePrice}
             selectedAmenities={selectedAmenities}
           />
         </CardContent>
