@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -10,10 +10,10 @@ import { BookingDateSection } from './BookingDateSection';
 import { GuestCounter } from './GuestCounter';
 import { DurationSelector } from './DurationSelector';
 import { BookingPriceSection } from './BookingPriceSection';
-import { CheckInOutSelector } from './CheckInOutSelector';
 import { AdditionalAmenitiesSelector } from './AdditionalAmenitiesSelector';
 import { useBookingCardState } from '@/hooks/useBookingCardState';
 import { Space } from '@/types/SpaceTypes';
+import { Loader2 } from 'lucide-react';
 
 interface BookingCardProps {
   space: Space;
@@ -55,10 +55,6 @@ export function BookingCard({
 
   const {
     selectedDateRange,
-    checkInTime,
-    setCheckInTime,
-    checkOutTime,
-    setCheckOutTime,
     selectedAmenities,
     handleAmenityToggle
   } = useBookingCardState({
@@ -128,16 +124,6 @@ export function BookingCard({
             maxCapacity={space.capacity}
           />
           
-          {bookingType === 'daily' && (
-            <CheckInOutSelector
-              checkInTime={checkInTime}
-              checkOutTime={checkOutTime}
-              onCheckInChange={setCheckInTime}
-              onCheckOutChange={setCheckOutTime}
-              disabled={!date || isProcessingPayment}
-            />
-          )}
-          
           <DurationSelector
             bookingType={bookingType}
             selectedHours={selectedHours}
@@ -172,7 +158,14 @@ export function BookingCard({
             onClick={handleReserveClick}
             disabled={isProcessingPayment || !date || authLoading}
           >
-            {isProcessingPayment ? 'Processando...' : 'Reservar'}
+            {isProcessingPayment ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              'Reservar'
+            )}
           </Button>
         </CardFooter>
       </Card>

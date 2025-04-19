@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Send } from 'lucide-react';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,12 +66,9 @@ export const SendMessageForm = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Enviar Mensagem</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent>
+    <form onSubmit={handleSubmit}>
+      <Card>
+        <CardContent className="pt-6">
           <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -85,7 +82,7 @@ export const SendMessageForm = ({
             Enviar
           </Button>
         </CardFooter>
-      </form>
-    </Card>
+      </Card>
+    </form>
   );
 };

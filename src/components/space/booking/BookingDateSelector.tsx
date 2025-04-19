@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from "lucide-react";
 import { format, addDays, isAfter, isBefore, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -13,20 +13,17 @@ interface BookingDateSelectorProps {
   isDateAvailable: (date: Date) => boolean;
   selectedDateRange: Date[];
   selectedDays: number;
-  setSelectedDays: (days: number) => void;
   bookingType: "hourly" | "daily";
 }
 
-export const BookingDateSelector = ({
+export function BookingDateSelector({
   date,
   setDate,
   isDateAvailable,
   selectedDateRange,
   selectedDays,
-  setSelectedDays,
   bookingType
-}: BookingDateSelectorProps) => {
-  // Get the minimum allowed date (2 days from now)
+}: BookingDateSelectorProps) {
   const minDate = addDays(new Date(), 2);
   
   const getDateRangeText = () => {
@@ -50,9 +47,7 @@ export const BookingDateSelector = ({
       return;
     }
 
-    // If hourly booking, just set the date
     if (bookingType === 'hourly') {
-      // Check if date is at least 2 days in the future and available
       if (isBefore(newDate, minDate)) {
         toast.error("Somente datas a partir de 2 dias no futuro podem ser reservadas");
         return;
@@ -64,13 +59,11 @@ export const BookingDateSelector = ({
       }
       
       setDate(newDate);
-      setSelectedDays(1);
       return;
     }
 
-    // For daily bookings
+    // For daily bookings with date range selection
     if (!date) {
-      // Check if date is at least 2 days in the future and available
       if (isBefore(newDate, minDate)) {
         toast.error("Somente datas a partir de 2 dias no futuro podem ser reservadas");
         return;
@@ -128,14 +121,6 @@ export const BookingDateSelector = ({
     setDate(newDate);
   };
 
-  const isInSelectedRange = (day: Date) => {
-    return selectedDateRange.some(selectedDate => 
-      selectedDate.getDate() === day.getDate() &&
-      selectedDate.getMonth() === day.getMonth() &&
-      selectedDate.getFullYear() === day.getFullYear()
-    );
-  };
-
   return (
     <div className="mb-4">
       <h4 className="font-medium mb-2">Selecione a data</h4>
@@ -162,7 +147,11 @@ export const BookingDateSelector = ({
               fromDate={minDate}
               disabled={(date) => !isDateAvailable(date) || isBefore(date, minDate)}
               modifiers={{
-                selected: isInSelectedRange
+                selected: (day) => selectedDateRange.some(d => 
+                  d.getDate() === day.getDate() &&
+                  d.getMonth() === day.getMonth() &&
+                  d.getFullYear() === day.getFullYear()
+                )
               }}
               modifiersStyles={{
                 selected: { backgroundColor: '#0284c7', color: 'white' }
@@ -174,43 +163,16 @@ export const BookingDateSelector = ({
       </div>
       
       {bookingType === 'daily' && (
-        <div className="mt-4">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => setSelectedDays(Math.max(1, selectedDays - 1))}
-              disabled={selectedDays <= 1}
-            >
-              -
-            </Button>
-            <span className="min-w-[40px] text-center">{selectedDays}</span>
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => {
-                if (date) {
-                  // Check if next day is available
-                  const nextDate = addDays(date, selectedDays);
-                  if (isDateAvailable(nextDate)) {
-                    setSelectedDays(selectedDays + 1);
-                  } else {
-                    toast.error("Próximo dia não está disponível");
-                  }
-                } else {
-                  setSelectedDays(selectedDays + 1);
-                }
-              }}
-              disabled={selectedDays >= 30}
-            >
-              +
-            </Button>
-            <span className="text-sm text-muted-foreground ml-2">
-              {selectedDays > 1 ? 'dias consecutivos' : 'dia'}
+        <div className="mt-2 text-sm text-muted-foreground">
+          {selectedDateRange.length > 0 ? (
+            <span>
+              {selectedDateRange.length} dia(s) selecionado(s)
             </span>
-          </div>
+          ) : (
+            <span>Selecione as datas</span>
+          )}
         </div>
       )}
     </div>
   );
-};
+}
