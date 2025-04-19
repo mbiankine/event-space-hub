@@ -1,9 +1,12 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SpaceFormValues } from '../forms/types';
+import { CustomAmenity } from '@/types/SpaceTypes';
+import { Json } from '@/integrations/supabase/types';
 
 export const useSpaceSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +50,15 @@ export const useSpaceSubmission = () => {
         hourlyPrice = parseFloat(values.hourlyPrice?.toString() || '0') || 0;
       }
 
+      // Convert CustomAmenity[] to Json[] for database compatibility
       const pricedAmenities = values.pricedAmenities || [];
+      const customAmenitiesAsJson = pricedAmenities.map(amenity => {
+        return {
+          name: amenity.name,
+          price: amenity.price,
+          description: amenity.description
+        } as Json;
+      });
 
       const spaceToInsert = {
         title: values.title,
@@ -56,7 +67,7 @@ export const useSpaceSubmission = () => {
         capacity: parseInt(values.capacity.toString()) || 0,
         space_type: values.spaceType,
         amenities: allAmenities,
-        custom_amenities: pricedAmenities,
+        custom_amenities: customAmenitiesAsJson,
         host_id: user.id,
         availability: (values.availability || []).map((date: Date) => date.toISOString().split('T')[0]),
         pricing_type: values.pricingType,

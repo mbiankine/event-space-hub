@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth/AuthContext';
 import { SpaceForm } from '@/components/host/SpaceForm';
 import { SpaceFormValues } from '@/components/host/forms/types';
+import { CustomAmenity } from '@/types/SpaceTypes';
+import { Json } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/host/LoadingState';
 import { HostLayout } from '@/components/layouts/HostLayout';
@@ -86,6 +88,15 @@ const EditSpace = () => {
       // Prepare all amenities
       const allAmenities = values.amenities.concat(values.customAmenities || []);
       
+      // Convert CustomAmenity[] to Json[] for database compatibility
+      const customAmenitiesAsJson = (values.pricedAmenities || []).map(amenity => {
+        return {
+          name: amenity.name,
+          price: amenity.price,
+          description: amenity.description
+        } as Json;
+      });
+      
       // Update space data - removed any reference to 'active' field
       const { error } = await supabase
         .from('spaces')
@@ -99,9 +110,9 @@ const EditSpace = () => {
           pricing_type: values.pricingType,
           location: values.location,
           amenities: allAmenities,
-          custom_amenities: values.pricedAmenities || [],
+          custom_amenities: customAmenitiesAsJson,
           availability: availabilityDates,
-          images: imagePaths,
+          images: imagePaths.length > 0 ? imagePaths : space.images,
           updated_at: new Date().toISOString()
         })
         .eq('id', id);
@@ -130,6 +141,20 @@ const EditSpace = () => {
   }
 
   // Transform DB space format to form format
+  // Convert Json[] to CustomAmenity[] for UI compatibility
+  const customAmenities: CustomAmenity[] = Array.isArray(space?.custom_amenities) 
+    ? space.custom_amenities.map((amenity: Json) => {
+        if (typeof amenity === 'object' && amenity !== null) {
+          return {
+            name: String(amenity.name || ''),
+            price: Number(amenity.price || 0),
+            description: amenity.description ? String(amenity.description) : undefined
+          };
+        }
+        return { name: '', price: 0 };
+      })
+    : [];
+    
   const initialValues: SpaceFormValues = {
     title: space?.title || '',
     description: space?.description || '',
@@ -141,7 +166,7 @@ const EditSpace = () => {
     location: space?.location || {},
     amenities: space?.amenities || [],
     customAmenities: [],
-    pricedAmenities: space?.custom_amenities || [],
+    pricedAmenities: customAmenities,
     availability: space?.availability?.map((dateStr: string) => new Date(dateStr)) || [],
     images: space?.images || []
   };

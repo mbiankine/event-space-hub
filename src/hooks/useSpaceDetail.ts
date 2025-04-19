@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/integrations/supabase/client';
-import { Space } from '@/types/SpaceTypes';
+import { Space, CustomAmenity } from '@/types/SpaceTypes';
+import { Json } from '@/integrations/supabase/types';
 
 export const useSpaceDetail = (id: string | undefined) => {
   const [space, setSpace] = useState<Space | null>(null);
@@ -33,9 +34,24 @@ export const useSpaceDetail = (id: string | undefined) => {
           throw new Error('Space not found');
         }
         
+        // Convert Json[] to CustomAmenity[] for custom_amenities
+        const customAmenities: CustomAmenity[] = Array.isArray(data.custom_amenities) 
+          ? data.custom_amenities.map((amenity: Json) => {
+              if (typeof amenity === 'object' && amenity !== null) {
+                return {
+                  name: String(amenity.name || ''),
+                  price: Number(amenity.price || 0),
+                  description: amenity.description ? String(amenity.description) : undefined
+                };
+              }
+              return { name: '', price: 0 };
+            })
+          : [];
+        
         // Cast the data.location from Json type to the expected location structure
         const spaceData: Space = {
           ...data,
+          custom_amenities: customAmenities,
           location: data.location as {
             city: string;
             state: string;
