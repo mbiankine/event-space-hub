@@ -14,16 +14,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { CheckInOutSelector } from './CheckInOutSelector';
 import { AdditionalAmenitiesSelector } from './AdditionalAmenitiesSelector';
-import { CustomAmenity } from '@/types/SpaceTypes';
+import { CustomAmenity, Space } from '@/types/SpaceTypes';
 
 interface BookingCardProps {
-  space: {
-    hourly_price: number;
-    price: number;
-    pricing_type: string;
-    capacity: number;
-    custom_amenities: CustomAmenity[];
-  };
+  space: Space;
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
   guests: number;
@@ -99,7 +93,7 @@ export function BookingCard({
   const calculatePrice = () => {
     const basePrice = bookingType === 'hourly' && space.hourly_price
       ? space.hourly_price * selectedHours
-      : space.price * selectedDays;
+      : (space.price || 0) * selectedDays;
       
     const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => 
       sum + (amenity.price || 0), 0
@@ -159,10 +153,10 @@ export function BookingCard({
         <CardHeader>
           <CardTitle>
             {space.pricing_type === 'hourly' 
-              ? `R$ ${space.hourly_price} por hora`
+              ? `R$ ${space.hourly_price || 0} por hora`
               : space.pricing_type === 'both' 
-                ? `R$ ${space.price} por dia / R$ ${space.hourly_price} por hora`
-                : `R$ ${space.price} por dia`}
+                ? `R$ ${space.price || 0} por dia / R$ ${space.hourly_price || 0} por hora`
+                : `R$ ${space.price || 0} por dia`}
           </CardTitle>
           <CardDescription>
             Escolha como deseja reservar
@@ -172,7 +166,7 @@ export function BookingCard({
           <BookingTypeSection
             bookingType={bookingType}
             setBookingType={setBookingType}
-            pricingType={space.pricing_type}
+            pricingType={space.pricing_type || 'daily'}
           />
           
           <BookingDateSection
