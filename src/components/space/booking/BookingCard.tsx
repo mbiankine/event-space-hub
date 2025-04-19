@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import { 
@@ -11,6 +10,10 @@ import { BookingDateSection } from './BookingDateSection';
 import { BookingPriceSection } from './BookingPriceSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { CheckInOutSelector } from './CheckInOutSelector';
+import { AdditionalAmenitiesSelector } from './AdditionalAmenitiesSelector';
+import { formatCurrency } from '@/lib/utils';
+import { CustomAmenity } from '@/types/SpaceTypes';
 
 interface BookingCardProps {
   space: any;
@@ -27,6 +30,13 @@ interface BookingCardProps {
   isDateAvailable: (date: Date) => boolean;
   handleBookNow: () => Promise<{ success: boolean, bookingId?: string }>;
   unavailableDates: Date[];
+  space: {
+    hourly_price: number;
+    price: number;
+    pricing_type: string;
+    capacity: number;
+    custom_amenities: CustomAmenity[];
+  };
 }
 
 export function BookingCard({
@@ -50,6 +60,9 @@ export function BookingCard({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
   const [selectedDateRange, setSelectedDateRange] = useState<Date[]>([]);
+  const [checkInTime, setCheckInTime] = useState("14:00");
+  const [checkOutTime, setCheckOutTime] = useState("12:00");
+  const [selectedAmenities, setSelectedAmenities] = useState<CustomAmenity[]>([]);
 
   useEffect(() => {
     if (date && bookingType === 'daily' && selectedDays > 1) {
@@ -92,6 +105,22 @@ export function BookingCard({
     return space.price;
   };
 
+  const handleAmenityToggle = (amenity: CustomAmenity) => {
+    setSelectedAmenities(current =>
+      current.some(a => a.name === amenity.name)
+        ? current.filter(a => a.name !== amenity.name)
+        : [...current, amenity]
+    );
+  };
+
+  const calculateTotalPrice = () => {
+    const basePrice = calculatePrice();
+    const amenitiesPrice = selectedAmenities.reduce((sum, amenity) => 
+      sum + (amenity.price || 0), 0
+    );
+    return basePrice + amenitiesPrice;
+  };
+
   const handleReserveClick = async () => {
     if (!user) {
       const result = await handleBookNow();
@@ -103,8 +132,13 @@ export function BookingCard({
       setPaymentError(null);
 
       const bookingResult = await handleBookNow();
-      if (!bookingResult.success) {
-        throw new Error('Falha ao criar reserva');
+      
+      if (bookingResult.success) {
+        const bookingData = {
+          check_in_time: bookingType === 'daily' ? checkInTime : null,
+          check_out_time: bookingType === 'daily' ? checkOutTime : null,
+          selected_amenities: selectedAmenities
+        };
       }
       
       return bookingResult;
@@ -212,56 +246,42 @@ export function BookingCard({
             </div>
           </div>
           
-          <div className="mb-4">
-            <h4 className="font-medium mb-2">
-              {bookingType === 'hourly' ? 'Duração em horas' : 'Duração em dias'}
-            </h4>
-            <div className="flex items-center justify-between border rounded-md p-3">
-              <div className="flex items-center gap-2">
-                <span>{bookingType === 'hourly' ? 'Horas' : 'Dias'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => bookingType === 'hourly' 
-                    ? handleHoursChange(false)
-                    : handleDaysChange(false)
-                  }
-                  disabled={bookingType === 'hourly' 
-                    ? selectedHours <= 1 
-                    : selectedDays <= 1
-                  }
-                >
-                  -
-                </Button>
-                <span className="w-8 text-center">
-                  {bookingType === 'hourly' ? selectedHours : selectedDays}
-                </span>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => bookingType === 'hourly'
-                    ? handleHoursChange(true)
-                    : handleDaysChange(true)
-                  }
-                  disabled={bookingType === 'hourly'
-                    ? selectedHours >= 24
-                    : selectedDays >= 30
-                  }
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-          </div>
+          {bookingType === 'daily' && (
+            <CheckInOutSelector
+              checkInTime={checkInTime}
+              checkOutTime={checkOutTime}
+              onCheckInChange={setCheckInTime}
+              onCheckOutChange={setCheckOutTime}
+              disabled={!date || isProcessingPayment}
+            />
+          )}
+          
+          <DurationSelector
+            bookingType={bookingType}
+            selectedHours={selectedHours}
+            setSelectedHours={setSelectedHours}
+            selectedDays={selectedDays}
+            setSelectedDays={setSelectedDays}
+            date={date}
+            isDateAvailable={isDateAvailable}
+          />
+
+          {space.custom_amenities && space.custom_amenities.length > 0 && (
+            <AdditionalAmenitiesSelector
+              amenities={space.custom_amenities.filter(amenity => amenity.price && amenity.price > 0)}
+              selectedAmenities={selectedAmenities}
+              onAmenityToggle={handleAmenityToggle}
+              disabled={isProcessingPayment}
+            />
+          )}
           
           <BookingPriceSection
             bookingType={bookingType}
             selectedHours={selectedHours}
             selectedDays={selectedDays}
             space={space}
-            calculatePrice={calculatePrice}
+            calculatePrice={calculateTotalPrice}
+            selectedAmenities={selectedAmenities}
           />
         </CardContent>
         <CardFooter>

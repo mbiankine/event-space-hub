@@ -13,6 +13,8 @@ export type Database = {
         Row: {
           additional_services_price: number | null
           booking_date: string
+          check_in_time: string | null
+          check_out_time: string | null
           client_email: string | null
           client_id: string
           client_name: string | null
@@ -27,6 +29,7 @@ export type Database = {
           payment_intent: string | null
           payment_method: string | null
           payment_status: string | null
+          selected_amenities: Json[] | null
           service_fee: number | null
           space_id: string
           space_price: number | null
@@ -39,6 +42,8 @@ export type Database = {
         Insert: {
           additional_services_price?: number | null
           booking_date: string
+          check_in_time?: string | null
+          check_out_time?: string | null
           client_email?: string | null
           client_id: string
           client_name?: string | null
@@ -53,6 +58,7 @@ export type Database = {
           payment_intent?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          selected_amenities?: Json[] | null
           service_fee?: number | null
           space_id: string
           space_price?: number | null
@@ -65,6 +71,8 @@ export type Database = {
         Update: {
           additional_services_price?: number | null
           booking_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
           client_email?: string | null
           client_id?: string
           client_name?: string | null
@@ -79,6 +87,7 @@ export type Database = {
           payment_intent?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          selected_amenities?: Json[] | null
           service_fee?: number | null
           space_id?: string
           space_price?: number | null
