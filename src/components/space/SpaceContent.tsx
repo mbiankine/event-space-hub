@@ -12,13 +12,11 @@ interface SpaceContentProps {
 export function SpaceContent({ space, onMessageClick }: SpaceContentProps) {
   return (
     <div>
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-xl font-semibold">Espaço inteiro hospedado por Anfitrião</h2>
-          <p className="text-muted-foreground">
-            Até {space.capacity} pessoas
-          </p>
-        </div>
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Espaço inteiro</h2>
+        <p className="text-muted-foreground">
+          Até {space.capacity} pessoas
+        </p>
       </div>
       
       <Separator className="my-6" />
@@ -30,7 +28,7 @@ export function SpaceContent({ space, onMessageClick }: SpaceContentProps) {
       
       <Separator className="my-6" />
       
-      <SpaceAmenities amenities={space.amenities || []} />
+      <SpaceAmenities amenities={space.amenities || []} customAmenities={space.custom_amenities || []} />
       
       <Separator className="my-6" />
       
@@ -38,15 +36,6 @@ export function SpaceContent({ space, onMessageClick }: SpaceContentProps) {
         hostId={space.host_id}
         spaceTitle={space.title}
         hostName="Anfitrião"
-        rating={4.99}
-        reviewCount={89}
-        yearsHosting={4}
-        responseRate={100}
-        responseTime="1 hora"
-        coHosts={[
-          { id: '1', name: 'Pedro Müller' },
-          { id: '2', name: 'Marcia' }
-        ]}
         onMessageClick={onMessageClick}
       />
     </div>
