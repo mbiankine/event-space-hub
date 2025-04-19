@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -48,6 +47,8 @@ export const useSpaceSubmission = () => {
         hourlyPrice = parseFloat(values.hourlyPrice?.toString() || '0') || 0;
       }
 
+      const pricedAmenities = values.pricedAmenities || [];
+
       const spaceToInsert = {
         title: values.title,
         description: values.description,
@@ -55,7 +56,7 @@ export const useSpaceSubmission = () => {
         capacity: parseInt(values.capacity.toString()) || 0,
         space_type: values.spaceType,
         amenities: allAmenities,
-        custom_amenities: values.pricedAmenities || [],
+        custom_amenities: pricedAmenities,
         host_id: user.id,
         availability: (values.availability || []).map((date: Date) => date.toISOString().split('T')[0]),
         pricing_type: values.pricingType,

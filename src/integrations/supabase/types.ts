@@ -195,6 +195,7 @@ export type Database = {
           availability: string[] | null
           capacity: number
           created_at: string | null
+          custom_amenities: Json[] | null
           description: string
           host_id: string
           hourly_price: number | null
@@ -212,6 +213,7 @@ export type Database = {
           availability?: string[] | null
           capacity: number
           created_at?: string | null
+          custom_amenities?: Json[] | null
           description: string
           host_id: string
           hourly_price?: number | null
@@ -229,6 +231,7 @@ export type Database = {
           availability?: string[] | null
           capacity?: number
           created_at?: string | null
+          custom_amenities?: Json[] | null
           description?: string
           host_id?: string
           hourly_price?: number | null
